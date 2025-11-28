@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from '@/components/ui/button';
+import { DownloadReport } from '@/components/dashboard/download-report';
 import { AlertTriangle, FileText, Bot, RefreshCcw } from 'lucide-react';
 import { LanguageContext, translations } from '@/context/language-context';
 
@@ -16,6 +17,7 @@ interface ReportDisplayProps {
   };
   isPending: boolean;
   onReset: () => void;
+  imagePreview: string | null;
 }
 
 function ReportSkeleton() {
@@ -36,7 +38,7 @@ function ReportSkeleton() {
     )
 }
 
-export function ReportDisplay({ state, isPending, onReset }: ReportDisplayProps) {
+export function ReportDisplay({ state, isPending, onReset, imagePreview }: ReportDisplayProps) {
   const { language } = useContext(LanguageContext);
   const t = translations[language];
 
@@ -69,12 +71,37 @@ export function ReportDisplay({ state, isPending, onReset }: ReportDisplayProps)
   }
 
   if (state.report) {
+    const reportContentForDownload = `
+      <div id="report-content" style="font-family: Arial, sans-serif; color: #333;">
+        <h1 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 20px;">XRay Insights - Diagnostic Report</h1>
+        <p style="font-size: 0.9em; color: #555; margin-bottom: 20px;">Generated on: ${new Date().toLocaleString()}</p>
+        
+        ${imagePreview ? `<img src="${imagePreview}" alt="X-ray image" style="max-width: 400px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;"/>` : ''}
+        
+        <div class="prose prose-sm dark:prose-invert max-w-none font-body prose-h2:font-headline prose-h2:text-2xl prose-h2:font-bold prose-h2:text-primary prose-h2:border-b prose-h2:pb-2 prose-h2:mb-4 prose-h2:mt-8">
+            ${state.report.replace(/## (.*?)\n/g, '<h2 style="font-size: 1.5em; color: #2563eb; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 25px; margin-bottom: 15px;">$1</h2>').replace(/\n/g, '<br />')}
+        </div>
+
+        <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #eee;">
+            <h3 style="font-size: 1.1em; color: #e11d48; margin-bottom: 10px;">AI Accuracy Disclaimer</h3>
+            <p style="font-size: 0.8em; color: #777;">${t.disclaimer}</p>
+        </div>
+        
+        <footer style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #eee; text-align: center; font-size: 0.7em; color: #999;">
+            <p>Created by Manuel M. in 2025 as a side hustle.</p>
+        </footer>
+      </div>
+    `;
+
     return (
         <Card className="flex flex-1 flex-col">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Bot className="h-6 w-6" />
-                    <span>{t.aiDiagnosticReport}</span>
+                <CardTitle className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-6 w-6" />
+                      <span>{t.aiDiagnosticReport}</span>
+                    </div>
+                    <DownloadReport reportContent={reportContentForDownload} />
                 </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-sm dark:prose-invert max-w-none font-body prose-h2:font-headline prose-h2:text-2xl prose-h2:font-bold prose-h2:text-primary prose-h2:border-b prose-h2:pb-2 prose-h2:mb-4 prose-h2:mt-8 flex-1">

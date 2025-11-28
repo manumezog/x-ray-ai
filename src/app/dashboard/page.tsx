@@ -89,7 +89,7 @@ export default function DashboardPage() {
         </Card>
       </div>
       <div className="lg:col-span-3">
-        <ReportDisplay state={state} isPending={isPending} onReset={handleReset}/>
+        <ReportDisplay state={state} isPending={isPending} onReset={handleReset} imagePreview={imagePreview} />
       </div>
     </div>
   );
