@@ -91,9 +91,6 @@ export function ReportDisplay({ state, isPending, onReset, imagePreview }: Repor
                       <h4 className="font-bold text-sm text-destructive">{t.disclaimerTitle}</h4>
                       <p>{t.disclaimer}</p>
                   </div>
-                  <div className="w-full text-center text-xs text-muted-foreground self-end">
-                      <p>Created by Manuel M. in 2025 as a side hustle.</p>
-                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 w-full mt-4">
                   <DownloadReport reportContent={state.report} imagePreview={imagePreview} asChild>
