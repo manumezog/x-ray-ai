@@ -1,7 +1,7 @@
 'use client';
 import { useContext } from 'react';
 import { useRouter } from 'next/navigation';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,17 +12,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { LogOut, User as UserIcon } from "lucide-react";
 import { LanguageContext, translations } from '@/context/language-context';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
 
 export function UserNav() {
   const { user } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
-  const userAvatar = PlaceHolderImages.find(p => p.id === 'user-avatar');
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
+  const { data: userData } = useDoc(userDocRef);
+
   const { language } = useContext(LanguageContext);
   const t = translations[language];
 
@@ -31,14 +39,22 @@ export function UserNav() {
     router.push('/login');
   };
 
+  const getInitials = (name: string | undefined | null) => {
+    if (!name) return <UserIcon />;
+    const nameParts = name.split(' ');
+    if (nameParts.length > 1) {
+      return `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase();
+    }
+    return name[0].toUpperCase();
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        <Button variant="ghost" className="relative h-9 w-9 rounded-full">
           <Avatar className="h-9 w-9">
-             {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" data-ai-hint={userAvatar.imageHint} />}
             <AvatarFallback>
-              <UserIcon />
+              {userData ? getInitials(userData.fullName) : <UserIcon />}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -46,7 +62,9 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{t.user}</p>
+            <p className="text-sm font-medium leading-none">
+              {userData?.fullName || t.user}
+            </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
             </p>
