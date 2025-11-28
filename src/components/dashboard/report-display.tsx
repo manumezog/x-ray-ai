@@ -82,7 +82,7 @@ export function ReportDisplay({ state, isPending, onReset, imagePreview }: Repor
                     <DownloadReport reportContent={state.report} imagePreview={imagePreview} />
                 </CardTitle>
             </CardHeader>
-            <CardContent className="prose prose-sm dark:prose-invert max-w-none font-body prose-h2:font-headline prose-h2:text-2xl prose-h2:font-bold prose-h2:text-primary prose-h2:border-b prose-h2:pb-2 prose-h2:mb-4 prose-h2:mt-8 flex-1">
+            <CardContent className="prose prose-sm dark:prose-invert max-w-none font-body prose-h2:font-headline prose-h2:text-2xl prose-h2:font-bold prose-h2:text-foreground prose-h2:border-b prose-h2:pb-2 prose-h2:mb-4 prose-h2:mt-8 flex-1">
                 <ReactMarkdown>{state.report}</ReactMarkdown>
             </CardContent>
             <CardFooter className="flex-col items-start gap-4 border-t pt-6">
