@@ -21,6 +21,7 @@ const GenerateDiagnosticReportInputSchema = z.object({
     .string()
     .optional()
     .describe('Additional details about the patient, if available.'),
+  language: z.string().optional().describe('The language for the report (e.g., "en" or "es").'),
 });
 export type GenerateDiagnosticReportInput = z.infer<typeof GenerateDiagnosticReportInputSchema>;
 
@@ -41,7 +42,7 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateDiagnosticReportOutputSchema},
   prompt: `You are an expert radiologist specializing in analyzing X-ray images and generating diagnostic reports.
 
-  Analyze the X-ray image provided and generate a detailed diagnostic report.
+  Analyze the X-ray image provided and generate a detailed diagnostic report in the specified language ({{language}}).
   Pay close attention to any anomalies, fractures, or other notable observations.
 
   Use the following as the primary source of information about the X-ray image.

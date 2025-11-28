@@ -1,7 +1,11 @@
+'use client';
+
+import { useContext } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, FileText, Bot } from 'lucide-react';
+import { LanguageContext, translations } from '@/context/language-context';
 
 interface ReportDisplayProps {
   state: {
@@ -30,13 +34,16 @@ function ReportSkeleton() {
 }
 
 export function ReportDisplay({ state, isPending }: ReportDisplayProps) {
+  const { language } = useContext(LanguageContext);
+  const t = translations[language];
+
   if (isPending) {
     return (
         <Card className="flex-1">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Bot className="h-6 w-6" />
-                    <span>Generating Report</span>
+                    <span>{t.generatingReport}</span>
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -50,7 +57,7 @@ export function ReportDisplay({ state, isPending }: ReportDisplayProps) {
     return (
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
+        <AlertTitle>{t.errorTitle}</AlertTitle>
         <AlertDescription>{state.error}</AlertDescription>
       </Alert>
     );
@@ -62,7 +69,7 @@ export function ReportDisplay({ state, isPending }: ReportDisplayProps) {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Bot className="h-6 w-6" />
-                    <span>AI Diagnostic Report</span>
+                    <span>{t.aiDiagnosticReport}</span>
                 </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap font-body">
@@ -76,8 +83,8 @@ export function ReportDisplay({ state, isPending }: ReportDisplayProps) {
     <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
       <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
         <FileText className="h-12 w-12" />
-        <h3 className="text-lg font-bold tracking-tight">No report generated</h3>
-        <p className="text-sm">Upload an X-ray image to generate a diagnostic report.</p>
+        <h3 className="text-lg font-bold tracking-tight">{t.noReportGenerated}</h3>
+        <p className="text-sm">{t.uploadToGenerate}</p>
       </div>
     </div>
   );

@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, useRef, ChangeEvent, DragEvent } from 'react';
+import { useState, useRef, ChangeEvent, DragEvent, useContext } from 'react';
 import Image from 'next/image';
 import { UploadCloud, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { LanguageContext, translations } from '@/context/language-context';
 
 export function ImageUploader() {
   const [preview, setPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { language } = useContext(LanguageContext);
+  const t = translations[language];
 
   const handleFileChange = (files: FileList | null) => {
     if (files && files[0]) {
@@ -87,7 +90,7 @@ export function ImageUploader() {
             onClick={onClear}
           >
             <X className="h-4 w-4" />
-            <span className="sr-only">Clear image</span>
+            <span className="sr-only">{t.clearImage}</span>
           </Button>
         </div>
       ) : (
@@ -104,9 +107,9 @@ export function ImageUploader() {
           <div className="flex flex-col items-center justify-center pt-5 pb-6">
             <UploadCloud className="w-10 h-10 mb-3 text-muted-foreground" />
             <p className="mb-2 text-sm text-muted-foreground">
-              <span className="font-semibold">Click to upload</span> or drag and drop
+              <span className="font-semibold">{t.clickToUpload}</span> {t.orDragAndDrop}
             </p>
-            <p className="text-xs text-muted-foreground">X-Ray image (PNG, JPG, etc.)</p>
+            <p className="text-xs text-muted-foreground">{t.xrayImageHint}</p>
           </div>
         </div>
       )}
