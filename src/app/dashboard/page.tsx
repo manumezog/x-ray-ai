@@ -8,6 +8,8 @@ import { SubmitButton } from '@/components/dashboard/submit-button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { LanguageContext, translations } from '@/context/language-context';
+import { Button } from '@/components/ui/button';
+import { RefreshCcw } from 'lucide-react';
 
 
 type FormState = {
@@ -83,7 +85,14 @@ export default function DashboardPage() {
                 <form action={formAction} className="space-y-4">
                     <input type="hidden" name="language" value={language} />
                     <ImageUploader imagePreview={imagePreview} setImagePreview={setImagePreview} disabled={isPending || !!state.report} />
-                    <SubmitButton isPending={isPending} isDisabled={!imagePreview || !!state.report} />
+                    {state.report ? (
+                      <Button onClick={handleReset} size="lg" className="w-full">
+                        <RefreshCcw className="mr-2" />
+                        {t.startNewDiagnosis}
+                      </Button>
+                    ) : (
+                      <SubmitButton isPending={isPending} isDisabled={!imagePreview || !!state.report} />
+                    )}
                 </form>
             </CardContent>
         </Card>
