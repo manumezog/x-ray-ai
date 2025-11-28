@@ -1,6 +1,7 @@
 'use client';
 
 import { useContext } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -72,8 +73,8 @@ export function ReportDisplay({ state, isPending }: ReportDisplayProps) {
                     <span>{t.aiDiagnosticReport}</span>
                 </CardTitle>
             </CardHeader>
-            <CardContent className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap font-body">
-                {state.report}
+            <CardContent className="prose prose-sm dark:prose-invert max-w-none font-body">
+                <ReactMarkdown>{state.report}</ReactMarkdown>
             </CardContent>
         </Card>
     );
