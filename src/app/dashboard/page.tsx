@@ -41,7 +41,7 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
 
 export default function DashboardPage() {
   const { toast } = useToast();
-  const [state, formAction, isPending] = useFormState(generateReportAction, {
+  const [state, formAction] = useFormState(generateReportAction, {
     report: null,
     error: null,
   });
@@ -74,7 +74,7 @@ export default function DashboardPage() {
         </Card>
       </div>
       <div className="lg:col-span-3">
-        <ReportDisplay state={state} isPending={isPending} />
+        <ReportDisplay state={state} />
       </div>
     </div>
   );
