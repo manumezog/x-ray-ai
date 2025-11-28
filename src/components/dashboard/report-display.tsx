@@ -2,10 +2,11 @@
 
 import { useContext } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, FileText, Bot } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, FileText, Bot, RefreshCcw } from 'lucide-react';
 import { LanguageContext, translations } from '@/context/language-context';
 
 interface ReportDisplayProps {
@@ -14,6 +15,7 @@ interface ReportDisplayProps {
     error: string | null;
   };
   isPending: boolean;
+  onReset: () => void;
 }
 
 function ReportSkeleton() {
@@ -34,7 +36,7 @@ function ReportSkeleton() {
     )
 }
 
-export function ReportDisplay({ state, isPending }: ReportDisplayProps) {
+export function ReportDisplay({ state, isPending, onReset }: ReportDisplayProps) {
   const { language } = useContext(LanguageContext);
   const t = translations[language];
 
@@ -54,28 +56,36 @@ export function ReportDisplay({ state, isPending }: ReportDisplayProps) {
     );
   }
 
-  if (state.error) {
+  if (state.error && !state.report) { // Show error only if there's no report
     return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>{t.errorTitle}</AlertTitle>
-        <AlertDescription>{state.error}</AlertDescription>
-      </Alert>
+      <div className="flex flex-1 items-center justify-center">
+        <Alert variant="destructive" className="w-full">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>{t.errorTitle}</AlertTitle>
+            <AlertDescription>{state.error}</AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   if (state.report) {
     return (
-        <Card className="flex-1">
+        <Card className="flex flex-1 flex-col">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Bot className="h-6 w-6" />
                     <span>{t.aiDiagnosticReport}</span>
                 </CardTitle>
             </CardHeader>
-            <CardContent className="prose prose-sm dark:prose-invert max-w-none font-body prose-h2:font-headline prose-h2:text-2xl prose-h2:font-bold prose-h2:text-primary prose-h2:border-b prose-h2:pb-2 prose-h2:mb-4 prose-h2:mt-8">
+            <CardContent className="prose prose-sm dark:prose-invert max-w-none font-body prose-h2:font-headline prose-h2:text-2xl prose-h2:font-bold prose-h2:text-primary prose-h2:border-b prose-h2:pb-2 prose-h2:mb-4 prose-h2:mt-8 flex-1">
                 <ReactMarkdown>{state.report}</ReactMarkdown>
             </CardContent>
+            <CardFooter className="border-t pt-6">
+                <Button onClick={onReset} className="w-full">
+                    <RefreshCcw className="mr-2" />
+                    {t.startNewDiagnosis}
+                </Button>
+            </CardFooter>
         </Card>
     );
   }

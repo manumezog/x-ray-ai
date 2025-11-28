@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, ChangeEvent, DragEvent, useContext } from 'react';
+import { useState, useRef, ChangeEvent, DragEvent, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import { UploadCloud, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -8,12 +8,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LanguageContext, translations } from '@/context/language-context';
 
-export function ImageUploader() {
-  const [preview, setPreview] = useState<string | null>(null);
+interface ImageUploaderProps {
+  imagePreview: string | null;
+  setImagePreview: (preview: string | null) => void;
+  disabled?: boolean;
+}
+
+export function ImageUploader({ imagePreview, setImagePreview, disabled = false }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { language } = useContext(LanguageContext);
   const t = translations[language];
+
+  useEffect(() => {
+    if (!imagePreview && fileInputRef.current) {
+        fileInputRef.current.value = '';
+    }
+  }, [imagePreview]);
 
   const handleFileChange = (files: FileList | null) => {
     if (files && files[0]) {
@@ -21,7 +32,7 @@ export function ImageUploader() {
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onloadend = () => {
-          setPreview(reader.result as string);
+          setImagePreview(reader.result as string);
         };
         reader.readAsDataURL(file);
 
@@ -40,7 +51,7 @@ export function ImageUploader() {
 
   const onDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsDragging(true);
+    if (!disabled) setIsDragging(true);
   };
 
   const onDragLeave = (e: DragEvent<HTMLDivElement>) => {
@@ -51,16 +62,24 @@ export function ImageUploader() {
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-    const files = e.dataTransfer.files;
-    handleFileChange(files);
+    if (!disabled) {
+        const files = e.dataTransfer.files;
+        handleFileChange(files);
+    }
   };
   
   const onClear = () => {
-    setPreview(null);
+    setImagePreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
+
+  const handleClick = () => {
+    if (!disabled) {
+        fileInputRef.current?.click()
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -73,43 +92,49 @@ export function ImageUploader() {
         accept="image/*"
         onChange={onFileChange}
         required
+        disabled={disabled}
       />
-      {preview ? (
+      {imagePreview ? (
         <div className="relative group">
           <Image
-            src={preview}
+            src={imagePreview}
             alt="X-ray preview"
             width={500}
             height={500}
             className="rounded-lg object-contain w-full aspect-square border"
           />
-          <Button
-            variant="destructive"
-            size="icon"
-            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={onClear}
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">{t.clearImage}</span>
-          </Button>
+          {!disabled && (
+            <Button
+              variant="destructive"
+              size="icon"
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={onClear}
+              type="button"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">{t.clearImage}</span>
+            </Button>
+          )}
         </div>
       ) : (
         <div
           className={cn(
-            'flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-secondary transition-colors',
-            isDragging && 'border-primary bg-secondary'
+            'flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg bg-card transition-colors',
+            !disabled && 'cursor-pointer hover:bg-secondary',
+            isDragging && !disabled && 'border-primary bg-secondary',
+            disabled && 'cursor-not-allowed bg-muted/50'
           )}
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={handleClick}
         >
-          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-            <UploadCloud className="w-10 h-10 mb-3 text-muted-foreground" />
-            <p className="mb-2 text-sm text-muted-foreground">
+          <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+            <UploadCloud className={cn("w-10 h-10 mb-3", disabled ? "text-muted-foreground/50" : "text-muted-foreground")} />
+            <p className={cn("mb-2 text-sm", disabled ? "text-muted-foreground/50" : "text-muted-foreground")}>
               <span className="font-semibold">{t.clickToUpload}</span> {t.orDragAndDrop}
             </p>
-            <p className="text-xs text-muted-foreground">{t.xrayImageHint}</p>
+            <p className={cn("text-xs", disabled ? "text-muted-foreground/50" : "text-muted-foreground")}>{t.xrayImageHint}</p>
           </div>
         </div>
       )}

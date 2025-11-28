@@ -18,6 +18,7 @@ type TranslationKeys = {
     aiDiagnosticReport: string;
     noReportGenerated: string;
     uploadToGenerate: string;
+    startNewDiagnosis: string;
     errorTitle: string;
     user: string;
     profile: string;
@@ -39,6 +40,7 @@ export const translations: Record<Language, TranslationKeys> = {
     aiDiagnosticReport: "AI Diagnostic Report",
     noReportGenerated: "No report generated",
     uploadToGenerate: "Upload an X-ray image to generate a diagnostic report.",
+    startNewDiagnosis: "Start New Diagnosis",
     errorTitle: "Error",
     user: "User",
     profile: "Profile",
@@ -58,6 +60,7 @@ export const translations: Record<Language, TranslationKeys> = {
     aiDiagnosticReport: "Informe de Diagnóstico IA",
     noReportGenerated: "No se ha generado ningún informe",
     uploadToGenerate: "Sube una imagen de Rayos-X para generar un informe de diagnóstico.",
+    startNewDiagnosis: "Iniciar Nuevo Diagnóstico",
     errorTitle: "Error",
     user: "Usuario",
     profile: "Perfil",
