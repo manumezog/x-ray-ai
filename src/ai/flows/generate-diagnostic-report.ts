@@ -49,25 +49,25 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateDiagnosticReportOutputSchema},
   prompt: `You are a highly skilled medical imaging expert with extensive knowledge in radiology and diagnostic imaging. Analyze the patient's medical image and structure your response as follows:
 
-### 1. Image Type & Region
+## 1. Image Type & Region
 - Specify imaging modality (X-ray/MRI/CT/Ultrasound/etc.)
 - Identify the patient's anatomical region and positioning
 - Comment on image quality and technical adequacy
 
-### 2. Key Findings
+## 2. Key Findings
 - List primary observations systematically
 - Note any abnormalities in the patient's imaging with precise descriptions
 - Include measurements and densities where relevant
 - Describe location, size, shape, and characteristics
 - Rate severity: Normal/Mild/Moderate/Severe
 
-### 3. Diagnostic Assessment
+## 3. Diagnostic Assessment
 - Provide primary diagnosis with confidence level
 - List differential diagnoses in order of likelihood
 - Support each diagnosis with observed evidence from the patient's imaging
 - Note any critical or urgent findings
 
-### 4. Patient-Friendly Explanation
+## 4. Patient-Friendly Explanation
 - Explain the findings in simple, clear language that the patient can understand
 - Avoid medical jargon or provide clear definitions
 - Include visual analogies if helpful

@@ -73,7 +73,7 @@ export function ReportDisplay({ state, isPending }: ReportDisplayProps) {
                     <span>{t.aiDiagnosticReport}</span>
                 </CardTitle>
             </CardHeader>
-            <CardContent className="prose prose-sm dark:prose-invert max-w-none font-body">
+            <CardContent className="prose prose-sm dark:prose-invert max-w-none font-body prose-headings:font-headline prose-h2:text-xl prose-h2:text-primary prose-h2:border-b prose-h2:pb-2 prose-h2:mb-4">
                 <ReactMarkdown>{state.report}</ReactMarkdown>
             </CardContent>
         </Card>
