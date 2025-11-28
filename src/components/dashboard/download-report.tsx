@@ -1,17 +1,9 @@
 'use client';
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Download, FileDown, FileType } from 'lucide-react';
+import { Download, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { saveAs } from 'file-saver';
-import htmlToDocx from 'html-to-docx';
 
 export function DownloadReport({ reportContent }: { reportContent: string }) {
 
@@ -51,32 +43,10 @@ export function DownloadReport({ reportContent }: { reportContent: string }) {
     pdf.save('diagnostic-report.pdf');
   };
 
-  const handleDownloadWord = async () => {
-    const docxBlob = await htmlToDocx(reportContent, undefined, {
-      font: 'Arial',
-      fontSize: 12,
-    });
-    saveAs(docxBlob, 'diagnostic-report.docx');
-  };
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Download className="mr-2" />
-          Download
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleDownloadPdf}>
-          <FileDown className="mr-2" />
-          Download as PDF
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleDownloadWord}>
-          <FileType className="mr-2" />
-          Download as Word
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+      <Download className="mr-2" />
+      Download as PDF
+    </Button>
   );
 }
