@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useRef, ChangeEvent, DragEvent } from 'react';
+import { useState, useRef, ChangeEvent, DragEvent, useEffect } from 'react';
 import Image from 'next/image';
 import { UploadCloud, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 export function ImageUploader() {
   const [preview, setPreview] = useState<string | null>(null);
@@ -22,6 +21,12 @@ export function ImageUploader() {
           setPreview(reader.result as string);
         };
         reader.readAsDataURL(file);
+
+        if (fileInputRef.current) {
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
+          fileInputRef.current.files = dataTransfer.files;
+        }
       }
     }
   };
@@ -44,9 +49,6 @@ export function ImageUploader() {
     e.preventDefault();
     setIsDragging(false);
     const files = e.dataTransfer.files;
-    if (fileInputRef.current) {
-        fileInputRef.current.files = files;
-    }
     handleFileChange(files);
   };
   
@@ -59,6 +61,16 @@ export function ImageUploader() {
 
   return (
     <div className="flex flex-col gap-4">
+      <Input
+        ref={fileInputRef}
+        id="xrayImage"
+        name="xrayImage"
+        type="file"
+        className="hidden"
+        accept="image/*"
+        onChange={onFileChange}
+        required
+      />
       {preview ? (
         <div className="relative group">
           <Image
@@ -96,16 +108,6 @@ export function ImageUploader() {
             </p>
             <p className="text-xs text-muted-foreground">X-Ray image (PNG, JPG, etc.)</p>
           </div>
-          <Input
-            ref={fileInputRef}
-            id="xrayImage"
-            name="xrayImage"
-            type="file"
-            className="hidden"
-            accept="image/*"
-            onChange={onFileChange}
-            required
-          />
         </div>
       )}
     </div>
