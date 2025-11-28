@@ -71,28 +71,6 @@ export function ReportDisplay({ state, isPending, onReset, imagePreview }: Repor
   }
 
   if (state.report) {
-    const reportContentForDownload = `
-      <div id="report-content" style="font-family: Arial, sans-serif; color: #333;">
-        <h1 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px; margin-bottom: 20px;">XRay Insights - Diagnostic Report</h1>
-        <p style="font-size: 0.9em; color: #555; margin-bottom: 20px;">Generated on: ${new Date().toLocaleString()}</p>
-        
-        ${imagePreview ? `<img src="${imagePreview}" alt="X-ray image" style="max-width: 400px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;"/>` : ''}
-        
-        <div class="prose prose-sm dark:prose-invert max-w-none font-body prose-h2:font-headline prose-h2:text-2xl prose-h2:font-bold prose-h2:text-primary prose-h2:border-b prose-h2:pb-2 prose-h2:mb-4 prose-h2:mt-8">
-            ${state.report.replace(/## (.*?)\n/g, '<h2 style="font-size: 1.5em; color: #2563eb; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 25px; margin-bottom: 15px;">$1</h2>').replace(/\n/g, '<br />')}
-        </div>
-
-        <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #eee;">
-            <h3 style="font-size: 1.1em; color: #e11d48; margin-bottom: 10px;">AI Accuracy Disclaimer</h3>
-            <p style="font-size: 0.8em; color: #777;">${t.disclaimer}</p>
-        </div>
-        
-        <footer style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #eee; text-align: center; font-size: 0.7em; color: #999;">
-            <p>Created by Manuel M. in 2025 as a side hustle.</p>
-        </footer>
-      </div>
-    `;
-
     return (
         <Card className="flex flex-1 flex-col">
             <CardHeader>
@@ -101,14 +79,21 @@ export function ReportDisplay({ state, isPending, onReset, imagePreview }: Repor
                       <Bot className="h-6 w-6" />
                       <span>{t.aiDiagnosticReport}</span>
                     </div>
-                    <DownloadReport reportContent={reportContentForDownload} />
+                    <DownloadReport reportContent={state.report} imagePreview={imagePreview} />
                 </CardTitle>
             </CardHeader>
             <CardContent className="prose prose-sm dark:prose-invert max-w-none font-body prose-h2:font-headline prose-h2:text-2xl prose-h2:font-bold prose-h2:text-primary prose-h2:border-b prose-h2:pb-2 prose-h2:mb-4 prose-h2:mt-8 flex-1">
                 <ReactMarkdown>{state.report}</ReactMarkdown>
             </CardContent>
-            <CardFooter className="border-t pt-6">
-                <Button onClick={onReset} className="w-full">
+            <CardFooter className="flex-col items-start gap-4 border-t pt-6">
+                <div className="space-y-2 text-xs text-muted-foreground">
+                    <h4 className="font-bold text-sm text-destructive">{t.disclaimerTitle}</h4>
+                    <p>{t.disclaimer}</p>
+                </div>
+                <div className="w-full text-center text-xs text-muted-foreground">
+                    <p>Created by Manuel M. in 2025 as a side hustle.</p>
+                </div>
+                <Button onClick={onReset} className="w-full mt-4">
                     <RefreshCcw className="mr-2" />
                     {t.startNewDiagnosis}
                 </Button>
