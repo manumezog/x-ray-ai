@@ -3,8 +3,9 @@
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import jsPDF from 'jspdf';
+import { Slot } from "@radix-ui/react-slot"
 
-export function DownloadReport({ reportContent, imagePreview }: { reportContent: string, imagePreview: string | null }) {
+export function DownloadReport({ reportContent, imagePreview, asChild, children }: { reportContent: string, imagePreview: string | null, asChild?: boolean, children?: React.ReactNode }) {
 
   const handleDownloadPdf = async () => {
     const doc = new jsPDF('p', 'pt', 'a4');
@@ -78,11 +79,14 @@ export function DownloadReport({ reportContent, imagePreview }: { reportContent:
         }
     }
 
-    const lines = reportContent.split('\n');
-    lines.forEach(line => {
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const lines = doc.splitTextToSize(reportContent, usableWidth);
+
+    lines.forEach((line: string) => {
         let isHeader = false;
         let text = line;
-
+        
         if (line.startsWith('## ')) {
             isHeader = true;
             text = line.substring(3);
@@ -90,10 +94,10 @@ export function DownloadReport({ reportContent, imagePreview }: { reportContent:
             text = line.replace(/-\s\*\*(.*?)\*\*: /g, '$1: ').replace(/\*\*/g, '');
         }
         
-        const splitText = doc.splitTextToSize(text, usableWidth);
-        const textHeight = (splitText.length * (isHeader ? 14 : 10)) + (isHeader ? 15 : 6);
+        const textHeight = (doc.getTextDimensions(text).h) + (isHeader ? 15 : 6);
 
         if (y + textHeight > usableHeight) {
+            addFooter(doc);
             doc.addPage();
             y = margin;
         }
@@ -102,15 +106,15 @@ export function DownloadReport({ reportContent, imagePreview }: { reportContent:
             doc.setFontSize(14);
             doc.setFont("helvetica", "bold");
             y += 10;
-            doc.text(splitText, margin, y);
-            y += (splitText.length * 14) + 5;
-            doc.line(margin, y - 8, margin + usableWidth, y - 8);
+            doc.text(text, margin, y);
             y += 5;
+            doc.line(margin, y, margin + usableWidth, y);
+            y += 15;
         } else {
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
-            doc.text(splitText, margin, y);
-            y += (splitText.length * 10) + 6;
+            doc.text(text, margin, y);
+            y += 16;
         }
     });
 
@@ -119,10 +123,16 @@ export function DownloadReport({ reportContent, imagePreview }: { reportContent:
     doc.save('diagnostic-report.pdf');
   };
 
+  const Comp = asChild ? Slot : Button;
+
   return (
-    <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
-      <Download className="mr-2" />
-      Download as PDF
-    </Button>
+    <Comp onClick={handleDownloadPdf} {...(asChild ? {} : { variant: "outline", size: "sm" })}>
+      {children ? children : (
+        <>
+          <Download className="mr-2" />
+          Download as PDF
+        </>
+      )}
+    </Comp>
   );
 }

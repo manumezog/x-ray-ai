@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from '@/components/ui/button';
 import { DownloadReport } from '@/components/dashboard/download-report';
-import { AlertTriangle, FileText, Bot, RefreshCcw } from 'lucide-react';
+import { AlertTriangle, FileText, Bot, RefreshCcw, Download } from 'lucide-react';
 import { LanguageContext, translations } from '@/context/language-context';
 
 interface ReportDisplayProps {
@@ -86,17 +86,27 @@ export function ReportDisplay({ state, isPending, onReset, imagePreview }: Repor
                 <ReactMarkdown>{state.report}</ReactMarkdown>
             </CardContent>
             <CardFooter className="flex-col items-start gap-4 border-t pt-6">
-                <div className="space-y-2 text-xs text-muted-foreground">
-                    <h4 className="font-bold text-sm text-destructive">{t.disclaimerTitle}</h4>
-                    <p>{t.disclaimer}</p>
+                <div className="w-full flex justify-between items-center gap-4">
+                  <div className="space-y-2 text-xs text-muted-foreground">
+                      <h4 className="font-bold text-sm text-destructive">{t.disclaimerTitle}</h4>
+                      <p>{t.disclaimer}</p>
+                  </div>
+                  <div className="w-full text-center text-xs text-muted-foreground self-end">
+                      <p>Created by Manuel M. in 2025 as a side hustle.</p>
+                  </div>
                 </div>
-                <div className="w-full text-center text-xs text-muted-foreground">
-                    <p>Created by Manuel M. in 2025 as a side hustle.</p>
+                <div className="grid grid-cols-2 gap-4 w-full mt-4">
+                  <DownloadReport reportContent={state.report} imagePreview={imagePreview} asChild>
+                     <Button variant="outline" size="lg">
+                      <Download className="mr-2" />
+                      Download Report
+                    </Button>
+                  </DownloadReport>
+                  <Button onClick={onReset} size="lg">
+                      <RefreshCcw className="mr-2" />
+                      {t.startNewDiagnosis}
+                  </Button>
                 </div>
-                <Button onClick={onReset} className="w-full mt-4">
-                    <RefreshCcw className="mr-2" />
-                    {t.startNewDiagnosis}
-                </Button>
             </CardFooter>
         </Card>
     );
