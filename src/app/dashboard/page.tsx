@@ -1,12 +1,11 @@
 'use client';
 
-import { useFormState } from 'react-dom';
+import { useActionState, useEffect, useTransition } from 'react';
 import { generateDiagnosticReport } from '@/ai/flows/generate-diagnostic-report';
 import { ImageUploader } from '@/components/dashboard/image-uploader';
 import { ReportDisplay } from '@/components/dashboard/report-display';
 import { SubmitButton } from '@/components/dashboard/submit-button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 type FormState = {
@@ -41,7 +40,8 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
 
 export default function DashboardPage() {
   const { toast } = useToast();
-  const [state, formAction] = useFormState(generateReportAction, {
+  const [isPending, startTransition] = useTransition();
+  const [state, formAction] = useActionState(generateReportAction, {
     report: null,
     error: null,
   });
@@ -66,15 +66,15 @@ export default function DashboardPage() {
                 <CardDescription>Upload an X-ray to generate an AI-powered report.</CardDescription>
             </CardHeader>
             <CardContent>
-                <form action={formAction} className="space-y-4">
+                <form action={(formData) => startTransition(() => formAction(formData))} className="space-y-4">
                     <ImageUploader />
-                    <SubmitButton />
+                    <SubmitButton isPending={isPending} />
                 </form>
             </CardContent>
         </Card>
       </div>
       <div className="lg:col-span-3">
-        <ReportDisplay state={state} />
+        <ReportDisplay state={state} isPending={isPending}/>
       </div>
     </div>
   );

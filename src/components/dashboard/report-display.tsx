@@ -2,13 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, FileText, Bot } from 'lucide-react';
-import { useFormStatus } from "react-dom";
 
 interface ReportDisplayProps {
   state: {
     report: string | null;
     error: string | null;
   };
+  isPending: boolean;
 }
 
 function ReportSkeleton() {
@@ -29,10 +29,8 @@ function ReportSkeleton() {
     )
 }
 
-export function ReportDisplay({ state }: ReportDisplayProps) {
-  const { pending } = useFormStatus();
-
-  if (pending) {
+export function ReportDisplay({ state, isPending }: ReportDisplayProps) {
+  if (isPending) {
     return (
         <Card className="flex-1">
             <CardHeader>

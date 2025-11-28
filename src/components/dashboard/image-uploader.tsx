@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, ChangeEvent, DragEvent, useEffect } from 'react';
+import { useState, useRef, ChangeEvent, DragEvent } from 'react';
 import Image from 'next/image';
 import { UploadCloud, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
