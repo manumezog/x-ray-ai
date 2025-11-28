@@ -22,8 +22,9 @@ export function Header() {
       <div className="ml-auto flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" className="flex items-center gap-2">
               <Globe className="h-[1.2rem] w-[1.2rem]" />
+              <span className="font-bold uppercase">{language}</span>
               <span className="sr-only">Select language</span>
             </Button>
           </DropdownMenuTrigger>
