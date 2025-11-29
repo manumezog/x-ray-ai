@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from 'firebase/firestore';
 import { Loader2 } from "lucide-react";
 
 type FormState = {
@@ -24,6 +25,7 @@ const initialState: FormState = {
 export default function LoginPage() {
   const { toast } = useToast();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
 
   const [state, formAction, isPending] = useActionState(async (prevState, formData) => {
@@ -33,8 +35,16 @@ export default function LoginPage() {
     if (!email || !password) {
       return { error: "Please fill in all fields." };
     }
-  
+
     try {
+      // Check if email is in the allowlist
+      const allowlistRef = doc(firestore, 'allowed_emails', email.toLowerCase());
+      const allowlistDoc = await getDoc(allowlistRef);
+
+      if (!allowlistDoc.exists()) {
+        return { error: "This email address is not authorized to access this application." };
+      }
+
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: 'Login successful!' });
       router.push('/dashboard');
@@ -42,7 +52,7 @@ export default function LoginPage() {
     } catch (e: any) {
       console.error(e);
       let errorMessage = 'An unexpected error occurred.';
-      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
         errorMessage = 'Invalid email or password.';
       } else if (e.code === 'auth/invalid-email') {
         errorMessage = 'Please enter a valid email address.';

@@ -27,6 +27,13 @@
         "email",
         "registrationDate"
       ]
+    },
+    "AllowedEmail": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Allowed Email",
+      "type": "object",
+      "description": "Represents an email address that is allowed to register. The document ID should be the email address.",
+      "properties": {}
     }
   },
   "auth": {
@@ -72,8 +79,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/allowed_emails/{email}",
+        "definition": {
+          "entityName": "AllowedEmail",
+          "schema": {
+            "$ref": "#/backend/entities/AllowedEmail"
+          },
+          "description": "Stores the list of email addresses authorized to create an account and log in. The document ID is the email address itself for quick lookups.",
+          "params": [
+            {
+              "name": "email",
+              "description": "The email address to be whitelisted."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "This design prioritizes user authentication and secure storage of diagnostic reports based on X-ray image analysis.  It uses path-based ownership for user data and reports, ensuring clear and easily managed security rules. Authorization Independence is achieved by storing the 'ownerId' within the diagnostic reports, removing the need to query parent documents for authorization. The structure facilitates QAPs by segregating user data using path-based ownership, which means list operations only return the data the current user is authorized to see.  The use of distinct collections for user data and reports promotes clarity and maintainability."
+    "reasoning": "This design prioritizes user authentication and secure storage of diagnostic reports based on X-ray image analysis.  It uses path-based ownership for user data and reports, ensuring clear and easily managed security rules. Authorization Independence is achieved by storing the 'ownerId' within the diagnostic reports, removing the need to query parent documents for authorization. The structure facilitates QAPs by segregating user data using path-based ownership, which means list operations only return the data the current user is authorized to see.  The use of distinct collections for user data and reports promotes clarity and maintainability. A new `allowed_emails` collection has been added to act as an allowlist for user registration and login, enhancing security and access control."
   }
 }

@@ -11,7 +11,7 @@ import { Logo } from "@/components/logo";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 type FormState = {
@@ -47,6 +47,14 @@ export default function SignupPage() {
     }
   
     try {
+      // Check if email is in the allowlist
+      const allowlistRef = doc(firestore, 'allowed_emails', email.toLowerCase());
+      const allowlistDoc = await getDoc(allowlistRef);
+
+      if (!allowlistDoc.exists()) {
+        return { error: "This email address is not authorized to register an account." };
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       

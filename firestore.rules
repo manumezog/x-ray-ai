@@ -1,31 +1,28 @@
 /**
- * Core Philosophy: This ruleset enforces a strict user-ownership model. All data is
- * scoped to a specific authenticated user, and access is granted only if the
- * requesting user's UID matches the user ID in the document path. This provides
- * strong data privacy and isolation by default.
+ * Core Philosophy: This ruleset enforces a strict user-ownership model and an
+ * email-based allowlist for registration. All user data is scoped to a specific
+ * authenticated user.
  *
- * Data Structure: The data is organized hierarchically. A top-level 'users'
- * collection holds user-specific documents. Each user document can contain
- * subcollections, such as 'reports', creating a clear data tree for each user
- * (e.g., /users/{userId}/reports/{reportId}).
+ * Data Structure:
+ * - /users/{userId}: Stores user-specific profiles.
+ * - /users/{userId}/reports/{reportId}: Stores user-owned reports.
+ * - /allowed_emails/{email}: A collection where each document ID is an
+ *   email address that is authorized to register and use the application.
  *
  * Key Security Decisions:
- * - User Listing Disabled: Listing documents from the top-level `/users`
- *   collection is explicitly forbidden to protect user privacy and prevent enumeration.
- * - Path-Based Ownership: All security decisions are derived from the `{userId}`
- *   wildcard in the path, which must match the authenticated user's ID.
- * - Default Deny: Access is denied by default. Rules only grant permission
- *   explicitly, ensuring a secure-by-default posture.
+ * - Email Allowlist: Before a user can sign in or sign up, the application logic
+ *   must verify that their email exists in the `/allowed_emails` collection.
+ * - Restricted Allowlist Access: The `/allowed_emails` collection is read-only
+ *   for authenticated users to perform the sign-up/sign-in check. It is not
+ *   writeable from the client to prevent unauthorized additions.
+ * - Path-Based Ownership: All security decisions for user data are derived from the
+ *   `{userId}` wildcard in the path, which must match the authenticated user's ID.
+ * - Default Deny: Access is denied by default.
  *
- * Denormalization for Authorization: To ensure performant and reliable authorization,
- * child documents (like 'reports') are expected to contain a denormalized 'ownerId' field.
- * This rule enforces that the 'ownerId' in the document data matches the {userId}
- * in the path, ensuring data integrity without needing costly cross-document reads.
- *
- * Structural Segregation: User-private data (like 'reports') is stored in a
- * subcollection under the user's own document. This structure is inherently secure
- * for list operations, as a query against a subcollection path is already scoped
- * to that specific user.
+ * Denormalization for Authorization: Child documents (like 'reports') contain a
+ * denormalized 'ownerId' field, matching the `{userId}` in the path. This ensures
+
+ * data integrity without needing costly cross-document reads during authorization.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -98,6 +95,21 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
     // Collection Rules
     // ------------------------------------------------------------------------
+
+    /**
+     * @description Manages the list of allowed email addresses.
+     *              - Reading is allowed for any signed-in user to check for eligibility.
+     *              - Writing is disabled from the client-side to prevent tampering.
+     *                Admins should manage this list directly in the Firebase Console.
+     * @path        /allowed_emails/{email}
+     * @allow       Any signed-in user, (get) /allowed_emails/user@example.com
+     * @deny        Any user, (list, create, update, delete)
+     * @principle   Secures the email allowlist by making it read-only from the client.
+     */
+    match /allowed_emails/{email} {
+        allow get: if isSignedIn();
+        allow list, write: if false;
+    }
 
     /**
      * @description Manages user profile documents. Only the authenticated user can
