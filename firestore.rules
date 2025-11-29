@@ -4,7 +4,7 @@
  * authenticated user.
  *
  * Data Structure:
- * - /users/{userId}: Stores user-specific profiles.
+ * - /users/{userId}: Stores user-specific profiles, including report counts.
  * - /users/{userId}/reports/{reportId}: Stores user-owned reports.
  * - /allowed_emails/{email}: A collection where each document ID is an
  *   email address that is authorized to register and use the application.
@@ -18,10 +18,13 @@
  * - Path-Based Ownership: All security decisions for user data are derived from the
  *   `{userId}` wildcard in the path, which must match the authenticated user's ID.
  * - Default Deny: Access is denied by default.
+ * - User-Managed Rate Limiting: Users are allowed to update their own
+ *   `dailyReportCount` and `lastReportDate` fields. This is considered safe
+ *   because the fields are non-critical and only affect the user's own ability
+ *   to generate reports, not their access or permissions.
  *
  * Denormalization for Authorization: Child documents (like 'reports') contain a
  * denormalized 'ownerId' field, matching the `{userId}` in the path. This ensures
-
  * data integrity without needing costly cross-document reads during authorization.
  */
 rules_version = '2';
@@ -67,12 +70,24 @@ service cloud.firestore {
     }
 
     /**
-     * On user profile update, ensures the 'id' field cannot be changed.
-     * This prevents re-assigning the user document to a different user.
+     * On user profile update, allows changes only to specific, non-critical fields.
+     * This prevents re-assigning the user document or changing core identifiers.
      */
     function isUpdatingOwnUserDocument() {
-      return request.resource.data.id == resource.data.id;
+      // Core fields that should NOT change.
+      let isIdSame = request.resource.data.id == resource.data.id;
+      let isEmailSame = request.resource.data.email == resource.data.email;
+      let isRegistrationDateSame = request.resource.data.registrationDate == resource.data.registrationDate;
+
+      // Check which fields are being modified. Only allow changes to the following fields.
+      let allowedFields = ['fullName', 'dailyReportCount', 'lastReportDate'];
+      let changingAllowedFields = request.resource.data.keys().hasAll(resource.data.keys())
+                                  && request.resource.data.diff(resource.data).affectedKeys()
+                                  .hasOnly(allowedFields);
+      
+      return isIdSame && isEmailSame && isRegistrationDateSame && changingAllowedFields;
     }
+
 
     /**
      * On report creation, validates that the denormalized 'ownerId' field

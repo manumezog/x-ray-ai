@@ -20,6 +20,15 @@
           "type": "string",
           "description": "The date and time the user registered.",
           "format": "date-time"
+        },
+        "dailyReportCount": {
+          "type": "number",
+          "description": "The number of reports the user has generated today."
+        },
+        "lastReportDate": {
+          "type": "string",
+          "description": "The date of the last report generation, in YYYY-MM-DD format.",
+          "format": "date"
         }
       },
       "required": [

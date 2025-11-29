@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { LanguageContext, translations } from '@/context/language-context';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw, Loader2 } from 'lucide-react';
+import { useFirestore, useUser, useDoc, useMemoFirebase, updateDocumentNonBlocking, useRemoteConfig, getValue } from '@/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 
 type FormState = {
@@ -23,31 +25,6 @@ const initialState: FormState = {
     error: null,
 };
 
-async function generateReportAction(prevState: FormState, formData: FormData): Promise<FormState> {
-  const imageFile = formData.get('xrayImage') as File;
-  const language = formData.get('language') as string;
-
-  if (!imageFile || imageFile.size === 0) {
-    return { report: null, error: 'Please upload an X-ray image file.' };
-  }
-  
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  if (!allowedTypes.includes(imageFile.type)) {
-    return { report: null, error: 'Invalid file type. Please upload a JPG, PNG, or WEBP image.' };
-  }
-
-  try {
-    const buffer = await imageFile.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString('base64');
-    const xrayImageDataUri = `data:${imageFile.type};base64,${base64}`;
-
-    const result = await generateDiagnosticReport({ xrayImageDataUri, language });
-    return { report: result.report, error: null };
-  } catch (e: any) {
-    console.error(e);
-    return { report: null, error: e.message || 'An unexpected error occurred while generating the report.' };
-  }
-}
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -58,7 +35,69 @@ export default function DashboardPage() {
   const [validation, setValidation] = useState<{ isValid: boolean; error: string | null }>({ isValid: false, error: null });
   const [isValidationPending, setIsValidationPending] = useState(false);
   
-  const [state, formAction, isPending] = useActionState(generateReportAction, initialState);
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const remoteConfig = useRemoteConfig();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
+  const { data: userData } = useDoc(userDocRef);
+
+  const generateReportWithRateLimit = async (prevState: FormState, formData: FormData): Promise<FormState> => {
+    const imageFile = formData.get('xrayImage') as File;
+    const language = formData.get('language') as string;
+    
+    if (!user || !userDocRef) {
+      return { report: null, error: 'You must be logged in to generate a report.' };
+    }
+  
+    if (!imageFile || imageFile.size === 0) {
+      // This is a reset call, not an error
+      return initialState;
+    }
+    
+    // --- Rate Limiting Logic ---
+    const dailyLimit = parseInt(getValue(remoteConfig, 'daily_report_limit').asString() || '5', 10);
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  
+    const currentCount = userData?.lastReportDate === today ? userData.dailyReportCount || 0 : 0;
+
+    if (currentCount >= dailyLimit) {
+      return { report: null, error: `You have reached your daily limit of ${dailyLimit} reports.` };
+    }
+    // --- End Rate Limiting Logic ---
+  
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(imageFile.type)) {
+      return { report: null, error: 'Invalid file type. Please upload a JPG, PNG, or WEBP image.' };
+    }
+  
+    try {
+      const buffer = await imageFile.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
+      const xrayImageDataUri = `data:${imageFile.type};base64,${base64}`;
+  
+      const result = await generateDiagnosticReport({ xrayImageDataUri, language });
+      
+      // --- Update User's Count ---
+      await updateDoc(userDocRef, {
+        dailyReportCount: currentCount + 1,
+        lastReportDate: today,
+      });
+      // --- End Update ---
+      
+      return { report: result.report, error: null };
+    } catch (e: any) {
+      console.error(e);
+      return { report: null, error: e.message || 'An unexpected error occurred while generating the report.' };
+    }
+  }
+
+  const [state, formAction, isPending] = useActionState(generateReportWithRateLimit, initialState);
+
 
   useEffect(() => {
     if (state.error) {
@@ -74,9 +113,8 @@ export default function DashboardPage() {
     setImagePreview(null);
     setImageFile(null);
     setValidation({ isValid: false, error: null });
-    // This is a way to reset the useActionState by providing an initial state
-    const emptyFormData = new FormData();
-    (formAction as (fd: FormData) => void)(emptyFormData);
+    // This is a way to reset the useActionState by passing an empty FormData
+    formAction(new FormData());
   }
 
   const handleImageChange = async (file: File | null) => {
