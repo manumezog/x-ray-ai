@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useContext, useState } from 'react';
 import { generateDiagnosticReport } from '@/ai/flows/generate-diagnostic-report';
+import { validateXrayImage } from '@/ai/flows/validate-xray-image';
 import { ImageUploader } from '@/components/dashboard/image-uploader';
 import { ReportDisplay } from '@/components/dashboard/report-display';
 import { SubmitButton } from '@/components/dashboard/submit-button';
@@ -9,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { LanguageContext, translations } from '@/context/language-context';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw } from 'lucide-react';
+import { RefreshCcw, Loader2 } from 'lucide-react';
 
 
 type FormState = {
@@ -53,6 +54,9 @@ export default function DashboardPage() {
   const { language } = useContext(LanguageContext);
   const t = translations[language];
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [validation, setValidation] = useState<{ isValid: boolean; error: string | null }>({ isValid: false, error: null });
+  const [isValidationPending, setIsValidationPending] = useState(false);
   
   const [state, formAction, isPending] = useActionState(generateReportAction, initialState);
 
@@ -68,9 +72,58 @@ export default function DashboardPage() {
 
   const handleReset = () => {
     setImagePreview(null);
-    // This is a way to reset the useActionState
-    (formAction as any)(new FormData());
+    setImageFile(null);
+    setValidation({ isValid: false, error: null });
+    // This is a way to reset the useActionState by providing an initial state
+    const emptyFormData = new FormData();
+    (formAction as (fd: FormData) => void)(emptyFormData);
   }
+
+  const handleImageChange = async (file: File | null) => {
+    if (!file) {
+      handleReset();
+      return;
+    }
+    
+    setImageFile(file);
+    const preview = URL.createObjectURL(file);
+    setImagePreview(preview);
+    setValidation({ isValid: false, error: null });
+    setIsValidationPending(true);
+
+    // 1. File size validation
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (file.size > MAX_FILE_SIZE) {
+      const errorMsg = 'Image size must be less than 10MB.';
+      setValidation({ isValid: false, error: errorMsg });
+      toast({ variant: 'destructive', title: t.errorTitle, description: errorMsg });
+      setIsValidationPending(false);
+      return;
+    }
+
+    // 2. Image content validation
+    try {
+      const buffer = await file.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
+      const imageDataUri = `data:${file.type};base64,${base64}`;
+
+      const validationResult = await validateXrayImage({ imageDataUri });
+      if (!validationResult.isXray) {
+        const errorMsg = `Invalid image: ${validationResult.reason}`;
+        setValidation({ isValid: false, error: errorMsg });
+        toast({ variant: 'destructive', title: 'Invalid Image', description: errorMsg });
+      } else {
+        setValidation({ isValid: true, error: null });
+      }
+    } catch (e: any) {
+      console.error(e);
+      const errorMsg = 'An error occurred during image validation.';
+      setValidation({ isValid: false, error: errorMsg });
+      toast({ variant: 'destructive', title: t.errorTitle, description: errorMsg });
+    } finally {
+      setIsValidationPending(false);
+    }
+  };
 
 
   return (
@@ -84,14 +137,24 @@ export default function DashboardPage() {
             <CardContent>
                 <form action={formAction} className="space-y-4">
                     <input type="hidden" name="language" value={language} />
-                    <ImageUploader imagePreview={imagePreview} setImagePreview={setImagePreview} disabled={isPending || !!state.report} />
+                    <ImageUploader 
+                      imagePreview={imagePreview} 
+                      onImageChange={handleImageChange}
+                      disabled={isPending || !!state.report || isValidationPending}
+                    />
+                     {isValidationPending && (
+                        <div className="flex items-center justify-center text-sm text-muted-foreground">
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Validating image...
+                        </div>
+                    )}
                     {state.report ? (
                       <Button onClick={handleReset} size="lg" className="w-full">
                         <RefreshCcw className="mr-2" />
                         {t.startNewDiagnosis}
                       </Button>
                     ) : (
-                      <SubmitButton isPending={isPending} isDisabled={!imagePreview || !!state.report} />
+                      <SubmitButton isPending={isPending} isDisabled={!imagePreview || !validation.isValid || isValidationPending || !!state.report} />
                     )}
                 </form>
             </CardContent>

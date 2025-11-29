@@ -10,17 +10,18 @@ import { LanguageContext, translations } from '@/context/language-context';
 
 interface ImageUploaderProps {
   imagePreview: string | null;
-  setImagePreview: (preview: string | null) => void;
+  onImageChange: (file: File | null) => void;
   disabled?: boolean;
 }
 
-export function ImageUploader({ imagePreview, setImagePreview, disabled = false }: ImageUploaderProps) {
+export function ImageUploader({ imagePreview, onImageChange, disabled = false }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { language } = useContext(LanguageContext);
   const t = translations[language];
 
   useEffect(() => {
+    // Clear file input when imagePreview is cleared externally
     if (!imagePreview && fileInputRef.current) {
         fileInputRef.current.value = '';
     }
@@ -30,22 +31,21 @@ export function ImageUploader({ imagePreview, setImagePreview, disabled = false 
     if (files && files[0]) {
       const file = files[0];
       if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImagePreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-
+        onImageChange(file);
+        
+        // We need to create a new DataTransfer object to assign to the input
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
         if (fileInputRef.current) {
-          const dataTransfer = new DataTransfer();
-          dataTransfer.items.add(file);
           fileInputRef.current.files = dataTransfer.files;
         }
       }
+    } else {
+      onImageChange(null);
     }
   };
 
-  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const onFileChangeFromInput = (e: ChangeEvent<HTMLInputElement>) => {
     handleFileChange(e.target.files);
   };
 
@@ -69,7 +69,7 @@ export function ImageUploader({ imagePreview, setImagePreview, disabled = false 
   };
   
   const onClear = () => {
-    setImagePreview(null);
+    onImageChange(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -77,9 +77,9 @@ export function ImageUploader({ imagePreview, setImagePreview, disabled = false 
 
   const handleClick = () => {
     if (!disabled) {
-        fileInputRef.current?.click()
+        fileInputRef.current?.click();
     }
-  }
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -90,7 +90,7 @@ export function ImageUploader({ imagePreview, setImagePreview, disabled = false 
         type="file"
         className="hidden"
         accept="image/*"
-        onChange={onFileChange}
+        onChange={onFileChangeFromInput}
         required
         disabled={disabled}
       />
