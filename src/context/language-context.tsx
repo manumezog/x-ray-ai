@@ -60,7 +60,7 @@ export const translations: Record<Language, TranslationKeys> = {
     clearImage: "Quitar imagen",
     generateReport: "Generar Informe",
     generating: "Generando...",
-generatingReport: "Generando Informe",
+    generatingReport: "Generando Informe",
     aiDiagnosticReport: "Informe de Diagnóstico IA",
     noReportGenerated: "No se ha generado ningún informe",
     uploadToGenerate: "Sube una imagen de Rayos-X para generar un informe de diagnóstico.",

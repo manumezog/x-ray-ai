@@ -20,5 +20,3 @@ export async function initializeRemoteConfig(remoteConfig: RemoteConfig) {
     console.error('Remote Config fetch failed:', err);
   }
 }
-
-    
