@@ -18,9 +18,8 @@ const serviceAccount = require('../service-account.json');
 
 // Add the list of emails you want to authorize here.
 const emailsToAllow = [
-  'manager@example.com',
-  'doctor1@example.com',
-  'radiologist@example.com',
+  'pepe@gmail.com',
+  'paco@gmail.com'
 ];
 
 // --- END: YOUR CONFIGURATION ---
