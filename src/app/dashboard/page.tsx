@@ -11,8 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { LanguageContext, translations } from '@/context/language-context';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw, Loader2 } from 'lucide-react';
-import { useFirestore, useUser, useDoc, useMemoFirebase, updateDocumentNonBlocking, useRemoteConfig, getValue } from '@/firebase';
+import { useFirestore, useUser, useDoc, useMemoFirebase, updateDocumentNonBlocking, useRemoteConfig } from '@/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getValue } from 'firebase/remote-config';
 
 
 type FormState = {
@@ -60,7 +61,7 @@ export default function DashboardPage() {
     }
     
     // --- Rate Limiting Logic ---
-    const dailyLimit = parseInt(getValue(remoteConfig, 'daily_report_limit').asString() || '5', 10);
+    const dailyLimit = remoteConfig ? parseInt(getValue(remoteConfig, 'daily_report_limit').asString(), 10) : 5;
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   
     const currentCount = userData?.lastReportDate === today ? userData.dailyReportCount || 0 : 0;

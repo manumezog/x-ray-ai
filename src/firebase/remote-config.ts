@@ -1,8 +1,6 @@
 'use client';
 
-import { fetchAndActivate, getValue, RemoteConfig } from 'firebase/remote-config';
-import { useFirebase } from './provider';
-
+import { fetchAndActivate, RemoteConfig } from 'firebase/remote-config';
 
 // --- Standalone initialization for server-side or one-off use ---
 export async function initializeRemoteConfig(remoteConfig: RemoteConfig) {
@@ -23,8 +21,4 @@ export async function initializeRemoteConfig(remoteConfig: RemoteConfig) {
   }
 }
 
-// --- Hook to get the Remote Config instance ---
-export function useRemoteConfig(): RemoteConfig {
-  const { remoteConfig } = useFirebase();
-  return remoteConfig;
-}
+    

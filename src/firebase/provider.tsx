@@ -6,7 +6,7 @@ import { Firestore } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { RemoteConfig } from 'firebase/remote-config';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
-import { initializeRemoteConfig, useRemoteConfig } from './remote-config';
+import { initializeRemoteConfig } from './remote-config';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -169,6 +169,12 @@ export const useFirebaseApp = (): FirebaseApp => {
   return firebaseApp;
 };
 
+/** Hook to get the Remote Config instance. */
+export const useRemoteConfig = (): RemoteConfig => {
+    const { remoteConfig } = useFirebase();
+    return remoteConfig;
+}
+
 type MemoFirebase <T> = T & {__memo?: boolean};
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
@@ -189,3 +195,5 @@ export const useUser = (): UserHookResult => { // Renamed from useAuthUser
   const { user, isUserLoading, userError } = useFirebase(); // Leverages the main hook
   return { user, isUserLoading, userError };
 };
+
+    
