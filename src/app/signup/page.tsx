@@ -28,7 +28,7 @@ export default function SignupPage() {
   const firestore = useFirestore();
   const router = useRouter();
 
-  const [state, formAction, isPending] = useActionState(async (prevState, formData) => {
+  const [state, formAction, isPending] = useActionState(async (prevState: FormState, formData: FormData) => {
     const fullName = formData.get('full-name') as string;
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
