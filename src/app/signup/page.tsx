@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import { useActionState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore } from '@/firebase';
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithRedirect, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
@@ -51,45 +51,45 @@ export default function SignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
+  const [isSigningIn, setIsSigningIn] = useState(true); // Used to show loader on page load
+
+  useEffect(() => {
+    if (!auth || !firestore) return;
+
+    getRedirectResult(auth)
+      .then(async (result) => {
+        setIsSigningIn(false);
+        if (result) {
+          const user = result.user;
+          const userDocRef = doc(firestore, "users", user.uid);
+          const userData = {
+            id: user.uid,
+            email: user.email,
+            fullName: user.displayName,
+            registrationDate: new Date().toISOString(),
+          };
+          await setDoc(userDocRef, userData, { merge: true });
+          toast({ title: 'Account created successfully!', description: 'You are now logged in.' });
+          router.push('/dashboard');
+        }
+      })
+      .catch((e: any) => {
+        setIsSigningIn(false);
+        console.error("Google Sign-In Error:", e);
+        toast({
+          variant: "destructive",
+          title: "Google Sign-Up Failed",
+          description: e.message || 'An unexpected error occurred during redirect.',
+        });
+      });
+  }, [auth, firestore, router, toast]);
+
 
   const handleGoogleSignIn = async () => {
-    if (!auth || !firestore) return;
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      const userDocRef = doc(firestore, "users", user.uid);
-      const userData = {
-        id: user.uid,
-        email: user.email,
-        fullName: user.displayName,
-        registrationDate: new Date().toISOString(),
-      };
-
-      // Use setDoc with merge:true to create the user document.
-      // This prevents errors if the document unexpectedly already exists.
-      await setDoc(userDocRef, userData, { merge: true });
-
-      toast({ title: 'Account created successfully!', description: 'You are now logged in.' });
-      router.push('/dashboard');
-    } catch (e: any) {
-        if (e.code === 'auth/popup-closed-by-user') {
-          // This is a common case, not necessarily an error.
-          toast({
-            variant: "default",
-            title: "Sign-up cancelled",
-            description: "The Google Sign-Up window was closed before completion.",
-          });
-          return; // Stop further execution
-        }
-      console.error("Google Sign-In Error:", e);
-      toast({
-        variant: "destructive",
-        title: "Google Sign-Up Failed",
-        description: e.message || 'An unexpected error occurred.',
-      });
-    }
+    setIsSigningIn(true);
+    await signInWithRedirect(auth, provider);
   };
 
   const [state, formAction, isPending] = useActionState(async (prevState, formData) => {
@@ -148,6 +148,15 @@ export default function SignupPage() {
       return { error: errorMessage };
     }
   }, initialState);
+
+  if (isSigningIn) {
+    return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-lg text-muted-foreground">Signing in...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
