@@ -4,17 +4,20 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the XRay Insights application.",
+      "description": "Represents a user of the application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the user.",
-          "format": "uuid"
+          "description": "Unique identifier for the user, matching Firebase Auth UID."
         },
         "email": {
           "type": "string",
           "description": "Email address of the user.",
           "format": "email"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "The user's full name."
         },
         "registrationDate": {
           "type": "string",
@@ -32,7 +35,7 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "google"
     ]
   },
   "firestore": {
@@ -44,36 +47,15 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user profiles. Path-based ownership ensures only the user can access their data.",
+          "description": "Stores user profiles. The document ID {userId} must match the authenticated user's UID.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user.  Corresponds to Firebase auth UID."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/reports/{reportId}",
-        "definition": {
-          "entityName": "Report",
-          "schema": {
-            "$ref": "#/backend/entities/Report"
-          },
-          "description": "Stores diagnostic reports for each user. Includes denormalized 'ownerId' (userId) for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who owns the report."
-            },
-            {
-              "name": "reportId",
-              "description": "The unique identifier of the diagnostic report."
+              "description": "The unique identifier of the user, corresponding to their Firebase Auth UID."
             }
           ]
         }
       }
-    ],
-    "reasoning": "This design prioritizes user authentication and secure storage of diagnostic reports based on X-ray image analysis.  It uses path-based ownership for user data and reports, ensuring clear and easily managed security rules. Authorization Independence is achieved by storing the 'ownerId' within the diagnostic reports, removing the need to query parent documents for authorization. The structure facilitates QAPs by segregating user data using path-based ownership, which means list operations only return the data the current user is authorized to see.  The use of distinct collections for user data and reports promotes clarity and maintainability."
+    ]
   }
 }
