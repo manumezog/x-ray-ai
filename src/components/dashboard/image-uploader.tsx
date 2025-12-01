@@ -12,9 +12,10 @@ interface ImageUploaderProps {
   imagePreview: string | null;
   setImagePreview: (preview: string | null) => void;
   disabled?: boolean;
+  onImageSelect?: () => void;
 }
 
-export function ImageUploader({ imagePreview, setImagePreview, disabled = false }: ImageUploaderProps) {
+export function ImageUploader({ imagePreview, setImagePreview, disabled = false, onImageSelect }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { language } = useContext(LanguageContext);
@@ -30,6 +31,11 @@ export function ImageUploader({ imagePreview, setImagePreview, disabled = false 
     if (files && files[0]) {
       const file = files[0];
       if (file.type.startsWith('image/')) {
+        // If there was an error, reset the state when a new image is selected.
+        if (onImageSelect) {
+          onImageSelect();
+        }
+
         const reader = new FileReader();
         reader.onloadend = () => {
           setImagePreview(reader.result as string);

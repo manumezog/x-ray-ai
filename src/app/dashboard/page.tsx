@@ -106,7 +106,12 @@ export default function DashboardPage() {
             <CardContent>
                 <form action={formAction} className="space-y-4">
                     <input type="hidden" name="language" value={language} />
-                    <ImageUploader imagePreview={imagePreview} setImagePreview={setImagePreview} disabled={isPending || showReport} />
+                    <ImageUploader 
+                      imagePreview={imagePreview} 
+                      setImagePreview={setImagePreview} 
+                      disabled={isPending || showReport}
+                      onImageSelect={showError ? handleReset : undefined}
+                    />
                     {showReport ? (
                       <Button onClick={handleReset} size="lg" className="w-full" type="button">
                         <RefreshCcw className="mr-2" />
