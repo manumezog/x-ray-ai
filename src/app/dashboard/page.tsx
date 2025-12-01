@@ -12,7 +12,7 @@ import { LanguageContext, translations } from '@/context/language-context';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
 import { checkAndIncrementReportCount } from '@/firebase/firestore/reports';
-import { useUser } from '@/firebase';
+import { useUser, useRemoteConfig } from '@/firebase';
 
 
 type FormState = {
@@ -32,6 +32,7 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
   const imageFile = formData.get('xrayImage') as File;
   const language = formData.get('language') as string;
   const userId = formData.get('userId') as string;
+  const dailyReportLimit = parseInt(formData.get('dailyReportLimit') as string, 10);
 
   if (!userId) {
     return { ...initialState, error: 'User not authenticated.' };
@@ -47,9 +48,9 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
 
   try {
     // Check report limit first
-    const canGenerate = await checkAndIncrementReportCount(userId);
+    const canGenerate = await checkAndIncrementReportCount(userId, dailyReportLimit);
     if (!canGenerate) {
-      return { ...initialState, error: 'You have reached your daily limit of 10 reports.' };
+      return { ...initialState, error: `You have reached your daily limit of ${dailyReportLimit} reports.` };
     }
 
     const buffer = await imageFile.arrayBuffer();
@@ -77,6 +78,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const { language } = useContext(LanguageContext);
+  const { daily_report_limit: dailyReportLimit } = useRemoteConfig();
   const t = translations[language];
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [displayError, setDisplayError] = useState<string | null>(null);
@@ -127,6 +129,7 @@ export default function DashboardPage() {
                 <form action={formAction} className="space-y-4">
                     <input type="hidden" name="language" value={language} />
                     <input type="hidden" name="userId" value={user?.uid} />
+                    <input type="hidden" name="dailyReportLimit" value={dailyReportLimit} />
                     <ImageUploader 
                       imagePreview={imagePreview} 
                       setImagePreview={setImagePreview} 

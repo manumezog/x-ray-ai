@@ -14,17 +14,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User as UserIcon, FileClock } from "lucide-react";
 import { LanguageContext, translations } from '@/context/language-context';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth, useRemoteConfig } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
-
-const DAILY_LIMIT = process.env.NEXT_PUBLIC_DAILY_REPORT_LIMIT || 10;
 
 export function UserNav() {
   const { user } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
+  const { daily_report_limit: dailyReportLimit } = useRemoteConfig();
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -89,7 +88,7 @@ export function UserNav() {
             <DropdownMenuItem disabled>
               <FileClock className="mr-2 h-4 w-4" />
               <span>
-                {t.reportsToday}: {userData.reportCount} / {DAILY_LIMIT}
+                {t.reportsToday}: {userData.reportCount} / {dailyReportLimit}
               </span>
             </DropdownMenuItem>
           )}

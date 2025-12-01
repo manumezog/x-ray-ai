@@ -4,14 +4,13 @@ import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firest
 
 const { firestore } = initializeFirebase();
 
-const DAILY_LIMIT = parseInt(process.env.NEXT_PUBLIC_DAILY_REPORT_LIMIT || "10", 10);
-
 /**
  * Checks if a user can generate a new report and increments their count.
  * @param userId The ID of the user.
+ * @param dailyLimit The maximum number of reports allowed per day.
  * @returns True if the user can generate a report, false otherwise.
  */
-export async function checkAndIncrementReportCount(userId: string): Promise<boolean> {
+export async function checkAndIncrementReportCount(userId: string, dailyLimit: number): Promise<boolean> {
   const userDocRef = doc(firestore, 'users', userId);
 
   try {
@@ -32,7 +31,7 @@ export async function checkAndIncrementReportCount(userId: string): Promise<bool
 
     if (lastReportDate === today) {
       // Same day, check the count
-      if (reportCount >= DAILY_LIMIT) {
+      if (reportCount >= dailyLimit) {
         return false; // Limit reached
       }
       // Increment count

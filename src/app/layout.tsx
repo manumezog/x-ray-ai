@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { LanguageProvider } from '@/context/language-context';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseClientProvider, RemoteConfigProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'XRay Insights',
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.Node;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -23,9 +23,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <LanguageProvider>
-            {children}
-          </LanguageProvider>
+          <RemoteConfigProvider>
+            <LanguageProvider>
+              {children}
+            </LanguageProvider>
+          </RemoteConfigProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>

@@ -4,6 +4,7 @@ import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, setDoc, doc, Firestore, SetOptions } from 'firebase/firestore'
+import { getRemoteConfig } from 'firebase/remote-config';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -16,7 +17,7 @@ export function initializeFirebase() {
 
   // In a deployed App Hosting environment, the config is automatically provided.
   // In a local development environment, we use the config from src/firebase/config.ts.
-  const app = initializeApp(process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? firebaseConfig : {});
+  const app = initializeApp(Object.keys(firebaseConfig).length > 0 ? firebaseConfig : {});
   return getSdks(app);
 }
 
@@ -24,7 +25,8 @@ export function getSdks(firebaseApp: FirebaseApp) {
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
+    firestore: getFirestore(firebaseApp),
+    remoteConfig: getRemoteConfig(firebaseApp),
   };
 }
 
@@ -50,3 +52,4 @@ export * from './firestore/use-doc';
 export * from './non-blocking-updates';
 export * from './errors';
 export * from './error-emitter';
+export * from './remote-config';
