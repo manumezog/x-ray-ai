@@ -2,7 +2,6 @@
 
 import { useActionState, useEffect, useContext, useState, useTransition } from 'react';
 import { generateDiagnosticReport } from '@/ai/flows/generate-diagnostic-report';
-import { validateXrayImage } from '@/ai/flows/validate-xray-image';
 import { ImageUploader } from '@/components/dashboard/image-uploader';
 import { ReportDisplay } from '@/components/dashboard/report-display';
 import { SubmitButton } from '@/components/dashboard/submit-button';
@@ -31,25 +30,10 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
     return { ...prevState, report: null, error: 'Please upload an X-ray image file.' };
   }
 
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  if (!allowedTypes.includes(imageFile.type)) {
-    return { ...prevState, report: null, error: 'Invalid file type. Please upload a JPG, PNG, or WEBP image.' };
-  }
-  
-  const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
-  if (imageFile.size > maxSizeInBytes) {
-      return { ...prevState, report: null, error: 'Image file is too large. Please upload an image under 10MB.' };
-  }
-
   try {
     const buffer = await imageFile.arrayBuffer();
     const base64 = Buffer.from(buffer).toString('base64');
     const xrayImageDataUri = `data:${imageFile.type};base64,${base64}`;
-
-    const validationResult = await validateXrayImage({ xrayImageDataUri });
-    if (!validationResult.isXray) {
-        return { ...prevState, report: null, error: validationResult.reason || 'The uploaded image does not appear to be a medical X-ray.' };
-    }
 
     const result = await generateDiagnosticReport({ xrayImageDataUri, language });
     return { report: result.report, error: null };
@@ -66,8 +50,7 @@ export default function DashboardPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   const [state, formAction, isPending] = useActionState(generateReportAction, initialState);
-  const [_, startTransition] = useTransition();
-
+  
   useEffect(() => {
     if (state.error) {
         toast({
@@ -79,20 +62,20 @@ export default function DashboardPage() {
   }, [state, toast, t.errorTitle]);
 
   const handleReset = () => {
-    startTransition(() => {
-        // This is a client-side state reset.
-        // We are not calling the server action.
-        (formAction as any)(initialState);
-        setImagePreview(null);
-        // Also reset the form's file input if necessary
-        const form = document.querySelector('form');
-        if (form) {
-            const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
-            if (fileInput) {
-                fileInput.value = '';
-            }
+    // A bit of a hack to reset the form action state.
+    // We can't directly call a reset function on useActionState.
+    // So we re-trigger the action with a state that will cause it to return the initial state.
+    // A better solution would involve a more complex state management.
+    (formAction as any)(initialState)
+    setImagePreview(null);
+    // Also reset the form's file input if necessary
+    const form = document.querySelector('form');
+    if (form) {
+        const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
+        if (fileInput) {
+            fileInput.value = '';
         }
-    });
+    }
   };
 
   return (
