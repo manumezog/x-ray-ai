@@ -46,7 +46,7 @@ export default function SignupPage() {
             const userData = {
               id: user.uid,
               email: user.email,
-              fullName: user.displayName,
+              fullName: user.displayName || user.email,
               registrationDate: new Date().toISOString(),
               reportCount: 0,
               lastReportDate: '',
