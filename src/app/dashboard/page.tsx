@@ -38,7 +38,7 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
     return { ...initialState, error: 'User not authenticated.' };
   }
   
-  if (isNaN(dailyReportLimit)) {
+  if (isNaN(dailyReportLimit) || dailyReportLimit <= 0) {
     return { ...initialState, error: 'Daily report limit is not configured correctly.' };
   }
 
@@ -82,7 +82,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const { language } = useContext(LanguageContext);
-  const { daily_report_limit: dailyReportLimit } = useRemoteConfig();
+  const { daily_report_limit: dailyReportLimit, isLoading: isConfigLoading } = useRemoteConfig();
   const t = translations[language];
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [displayError, setDisplayError] = useState<string | null>(null);
@@ -129,6 +129,7 @@ export default function DashboardPage() {
 
   const showReport = state.report && !isPending;
   const showError = displayError && !isPending && !showReport;
+  const isSubmitDisabled = !imagePreview || !user || isConfigLoading || isPending;
 
   return (
     <div className="grid flex-1 gap-8 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-5">
@@ -160,7 +161,7 @@ export default function DashboardPage() {
                           Try Again
                       </Button>
                     ) : (
-                      <SubmitButton isPending={isPending} isDisabled={!imagePreview || !user} />
+                      <SubmitButton isPending={isPending} isDisabled={isSubmitDisabled} />
                     )}
                 </form>
             </CardContent>
