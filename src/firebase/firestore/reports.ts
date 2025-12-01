@@ -2,8 +2,6 @@
 import { initializeFirebase } from '@/firebase';
 import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
-const { firestore } = initializeFirebase();
-
 /**
  * Checks if a user can generate a new report and increments their count.
  * @param userId The ID of the user.
@@ -11,6 +9,8 @@ const { firestore } = initializeFirebase();
  * @returns True if the user can generate a report, false otherwise.
  */
 export async function checkAndIncrementReportCount(userId: string, dailyLimit: number): Promise<boolean> {
+  // Initialize Firebase within the function to ensure it runs only when called
+  const { firestore } = initializeFirebase();
   const userDocRef = doc(firestore, 'users', userId);
 
   try {
