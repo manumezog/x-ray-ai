@@ -64,20 +64,24 @@ export default function DashboardPage() {
   const t = translations[language];
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
-  const [state, formAction, isPending, setState] = useActionState(generateReportAction, initialState);
+  const [state, formAction, isPending] = useActionState(generateReportAction, initialState);
   
   useEffect(() => {
-    if (state.error) {
+    // Only show a toast if there's an error and the form is not pending.
+    // This prevents showing an error toast during the initial "reset" state.
+    if (state.error && !isPending) {
         toast({
             variant: "destructive",
             title: t.errorTitle,
             description: state.error,
         });
     }
-  }, [state, toast, t.errorTitle]);
+  }, [state, isPending, toast, t.errorTitle]);
 
   const handleReset = () => {
-    setState(initialState);
+    // A dummy form action call with no FormData.
+    // This is the idiomatic way to reset `useActionState` to its initial state.
+    formAction(new FormData());
     setImagePreview(null);
     const form = document.querySelector('form');
     if (form) {
@@ -87,6 +91,9 @@ export default function DashboardPage() {
         }
     }
   };
+
+  const showReport = state.report && !isPending;
+  const showError = state.error && !isPending;
 
   return (
     <div className="grid flex-1 gap-8 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-5">
@@ -99,14 +106,19 @@ export default function DashboardPage() {
             <CardContent>
                 <form action={formAction} className="space-y-4">
                     <input type="hidden" name="language" value={language} />
-                    <ImageUploader imagePreview={imagePreview} setImagePreview={setImagePreview} disabled={isPending || !!state.report} />
-                    {state.report ? (
+                    <ImageUploader imagePreview={imagePreview} setImagePreview={setImagePreview} disabled={isPending || showReport} />
+                    {showReport ? (
                       <Button onClick={handleReset} size="lg" className="w-full" type="button">
                         <RefreshCcw className="mr-2" />
                         {t.startNewDiagnosis}
                       </Button>
+                    ) : showError ? (
+                      <Button onClick={handleReset} size="lg" className="w-full" type="button">
+                          <RefreshCcw className="mr-2" />
+                          Try Again
+                      </Button>
                     ) : (
-                      <SubmitButton isPending={isPending} isDisabled={!imagePreview || !!state.report} />
+                      <SubmitButton isPending={isPending} isDisabled={!imagePreview} />
                     )}
                 </form>
             </CardContent>
