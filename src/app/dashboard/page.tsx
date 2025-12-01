@@ -81,7 +81,7 @@ export default function DashboardPage() {
   const handleReset = () => {
     // A dummy form action call with no FormData.
     // This is the idiomatic way to reset `useActionState` to its initial state.
-    formAction(new FormData());
+    formAction(initialState as any);
     setImagePreview(null);
     const form = document.querySelector('form');
     if (form) {
