@@ -41,12 +41,6 @@ export function ImageUploader({ imagePreview, setImagePreview, disabled = false,
           setImagePreview(reader.result as string);
         };
         reader.readAsDataURL(file);
-
-        if (fileInputRef.current) {
-          const dataTransfer = new DataTransfer();
-          dataTransfer.items.add(file);
-          fileInputRef.current.files = dataTransfer.files;
-        }
       }
     }
   };
@@ -69,8 +63,7 @@ export function ImageUploader({ imagePreview, setImagePreview, disabled = false,
     e.preventDefault();
     setIsDragging(false);
     if (!disabled) {
-        const files = e.dataTransfer.files;
-        handleFileChange(files);
+        handleFileChange(e.dataTransfer.files);
     }
   };
   
