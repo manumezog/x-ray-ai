@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
-import { useActionState, useState } from 'react';
+import { useActionState, useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -152,11 +152,11 @@ export default function SignupPage() {
           <div className="grid gap-4">
              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isFormDisabled}>
                 {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 
-                  <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                    <path fill="#4285F4" d="M488 261.8C488 403.3 381.5 512 244 512 110 512 0 402 0 256S110 0 244 0c73 0 136 28.7 182 74.2L364 144.2c-21-21.5-49-34.4-80-34.4-68.5 0-124 55.7-124 124.2s55.5 124.2 124 124.2c76.5 0 103-56.5 106-82.5H244v-66h234c2 12.8 4 26 4 39.4z" />
-                    <path fill="#34A853" d="M253 490c-32-15-58-39-78-69l-72 48c41 40 96 66 156 66 73 0 136-28.7 182-74.2l-64-51c-20 28-51 46-88 46z" />
-                    <path fill="#FBBC05" d="M106 290c-5-16-5-33 0-48l-72-48c-19 39-19 85 0 124l72-28z" />
-                    <path fill="#EA4335" d="M253 110c37 0 68 18 88 46l64-51C380 28.7 317 0 244 0 158 0 88 47 46 124l72 48c20-30 46-52 75-52z" />
+                  <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48" role="img" aria-hidden="true" focusable="false">
+                    <path fill="#4285F4" d="M48 24.4c0-1.6-.1-3.2-.4-4.8H24v9.1h13.5c-.6 2.9-2.3 5.4-4.9 7.1v5.9h7.6c4.5-4.1 7-10.2 7-17.3z"/>
+                    <path fill="#34A853" d="M24 48c6.5 0 12-2.1 16-5.7l-7.6-5.9c-2.2 1.5-5 2.3-8.4 2.3-6.5 0-12-4.4-14-10.3H2.4v6.1C6.7 43.2 14.7 48 24 48z"/>
+                    <path fill="#FBBC05" d="M10 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7V13H2.4C.9 16.1 0 19.9 0 24s.9 7.9 2.4 11l7.6-6.3z"/>
+                    <path fill="#EA4335" d="M24 9.8c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C36 2.2 30.5 0 24 0 14.7 0 6.7 4.8 2.4 13l7.6 6.3c2-5.9 7.5-10.3 14-10.3z"/>
                   </svg>
                 }
                 Sign up with Google
