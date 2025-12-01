@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { LanguageContext, translations } from '@/context/language-context';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
+import { checkAndIncrementReportCount } from '@/firebase/firestore/reports';
+import { useUser } from '@/firebase';
 
 
 type FormState = {
@@ -29,6 +31,11 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 async function generateReportAction(prevState: FormState, formData: FormData): Promise<FormState> {
   const imageFile = formData.get('xrayImage') as File;
   const language = formData.get('language') as string;
+  const userId = formData.get('userId') as string;
+
+  if (!userId) {
+    return { ...initialState, error: 'User not authenticated.' };
+  }
 
   if (!imageFile || imageFile.size === 0) {
     return { ...initialState, error: 'Please upload an X-ray image file.' };
@@ -39,6 +46,12 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
   }
 
   try {
+    // Check report limit first
+    const canGenerate = await checkAndIncrementReportCount(userId);
+    if (!canGenerate) {
+      return { ...initialState, error: 'You have reached your daily limit of 10 reports.' };
+    }
+
     const buffer = await imageFile.arrayBuffer();
     const base64 = Buffer.from(buffer).toString('base64');
     const xrayImageDataUri = `data:${imageFile.type};base64,${base64}`;
@@ -46,6 +59,8 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
     // Validate if the image is an X-ray
     const validationResult = await validateXrayImage({ xrayImageDataUri });
     if (!validationResult.isXray) {
+        // Note: We don't decrement the count if validation fails.
+        // The limit is on generation *attempts*.
         return { report: null, error: `Image validation failed: ${validationResult.reason}` };
     }
 
@@ -60,6 +75,7 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
 
 export default function DashboardPage() {
   const { toast } = useToast();
+  const { user } = useUser();
   const { language } = useContext(LanguageContext);
   const t = translations[language];
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -88,9 +104,6 @@ export default function DashboardPage() {
     }
     setImagePreview(null);
     setDisplayError(null);
-    // This is a way to reset the useActionState, but it's not ideal.
-    // For this app, simply resetting the UI is sufficient.
-    // A more complex app might need a key on the form to remount it.
   };
 
   const onImageSelect = () => {
@@ -113,6 +126,7 @@ export default function DashboardPage() {
             <CardContent>
                 <form action={formAction} className="space-y-4">
                     <input type="hidden" name="language" value={language} />
+                    <input type="hidden" name="userId" value={user?.uid} />
                     <ImageUploader 
                       imagePreview={imagePreview} 
                       setImagePreview={setImagePreview} 
@@ -130,7 +144,7 @@ export default function DashboardPage() {
                           Try Again
                       </Button>
                     ) : (
-                      <SubmitButton isPending={isPending} isDisabled={!imagePreview} />
+                      <SubmitButton isPending={isPending} isDisabled={!imagePreview || !user} />
                     )}
                 </form>
             </CardContent>

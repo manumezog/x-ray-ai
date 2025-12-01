@@ -16,7 +16,7 @@ export function initializeFirebase() {
 
   // In a deployed App Hosting environment, the config is automatically provided.
   // In a local development environment, we use the config from src/firebase/config.ts.
-  const app = initializeApp(process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? firebaseConfig : undefined);
+  const app = initializeApp(process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? firebaseConfig : {});
   return getSdks(app);
 }
 

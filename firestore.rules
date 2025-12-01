@@ -14,10 +14,8 @@ service cloud.firestore {
 
     // Rules for the 'users' collection
     match /users/{userId} {
-      // READ: Any authenticated user can read any user's profile.
-      // This is often desired for features like user search or viewing profiles.
-      // For stricter privacy, change to: `allow read: if isOwner(userId);`
-      allow get: if isSignedIn();
+      // READ: A user can only read their own profile.
+      allow get: if isOwner(userId);
 
       // LIST: Disabled for privacy. Prevents anyone from downloading a list of all users.
       allow list: if false;
@@ -26,7 +24,8 @@ service cloud.firestore {
       // The `id` field within the document must match their authentication UID.
       allow create: if isOwner(userId) && request.resource.data.id == userId;
 
-      // UPDATE: A user can only update their own document.
+      // UPDATE: A user can only update their own document for specific fields.
+      // The server-side logic handles the report count updates.
       allow update: if isOwner(userId);
       
       // DELETE: A user can only delete their own document.
