@@ -1,33 +1,32 @@
 'use client';
 
 import Link from "next/link";
-import { useRouter } from 'next/navigation';
-import { useActionState, useState, useEffect } from 'react';
+import { useActionState, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/logo";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore } from '@/firebase';
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { Loader2, CheckCircle } from 'lucide-react';
 
 type FormState = {
   error: string | null;
+  success: boolean;
 }
 
 const initialState: FormState = {
   error: null,
+  success: false,
 };
 
 export default function SignupPage() {
   const { toast } = useToast();
   const auth = useAuth();
   const firestore = useFirestore();
-  const router = useRouter();
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const [state, formAction, isPending] = useActionState(async (prevState, formData) => {
     const fullName = formData.get('full-name') as string;
@@ -35,16 +34,17 @@ export default function SignupPage() {
     const password = formData.get('password') as string;
   
     if (!fullName || !email || !password) {
-      return { error: "Please fill in all fields." };
+      return { ...prevState, error: "Please fill in all fields." };
     }
     
     if (password.length < 6) {
+      const errorMessage = "Password must be at least 6 characters.";
       toast({
         variant: "destructive",
         title: "Signup Failed",
-        description: "Password must be at least 6 characters.",
+        description: errorMessage,
       });
-      return { error: "Password must be at least 6 characters." };
+      return { ...prevState, error: errorMessage };
     }
   
     try {
@@ -53,8 +53,10 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      const userDocRef = doc(firestore, "users", user.uid);
+      // Send verification email
+      await sendEmailVerification(user);
       
+      const userDocRef = doc(firestore, "users", user.uid);
       const userData = {
         id: user.uid,
         email: user.email,
@@ -63,12 +65,10 @@ export default function SignupPage() {
         reportCount: 0,
         lastReportDate: '',
       };
-
       await setDoc(userDocRef, userData);
 
-      toast({ title: 'Signup successful!', description: 'You are now logged in.' });
-      router.push('/dashboard');
-      return { error: null };
+      toast({ title: 'Signup successful!', description: 'Please check your email to verify your account.' });
+      return { error: null, success: true };
     } catch (e: any) {
       console.error("Email Signup Error:", e);
       let errorMessage = 'An unexpected error occurred.';
@@ -84,57 +84,34 @@ export default function SignupPage() {
         title: "Signup Failed",
         description: errorMessage,
       });
-      return { error: errorMessage };
+      return { ...prevState, error: errorMessage };
     }
   }, initialState);
 
-  const handleGoogleSignIn = async () => {
-    if (!auth || !firestore) {
-      toast({
-        variant: "destructive",
-        title: "Sign-up Failed",
-        description: "Firebase services are not ready.",
-      });
-      return;
-    };
-    setIsGoogleLoading(true);
-    const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const userDocRef = doc(firestore, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        const userData = {
-          id: user.uid,
-          email: user.email,
-          fullName: user.displayName || user.email, // Fallback to email if display name is not available
-          registrationDate: new Date().toISOString(),
-          reportCount: 0,
-          lastReportDate: '',
-        };
-        await setDoc(userDocRef, userData);
-      }
-      toast({ title: "Sign-up successful!" });
-      router.push('/dashboard');
-
-    } catch (e: any) {
-        console.error("Google Sign-In Error:", e);
-        // Handle specific errors, like popup closed by user
-        if (e.code !== 'auth/popup-closed-by-user') {
-            toast({
-              variant: "destructive",
-              title: "Sign-up Failed",
-              description: "An error occurred during Google Sign-In.",
-            });
-        }
-    } finally {
-        setIsGoogleLoading(false);
-    }
-  };
-
-  const isFormDisabled = isPending || isGoogleLoading;
+  if (state.success) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-sm mx-auto">
+          <CardHeader className="text-center">
+            <div className="mb-4 flex justify-center">
+              <CheckCircle className="h-16 w-16 text-green-500" />
+            </div>
+            <CardTitle className="text-2xl font-headline">Verification Email Sent</CardTitle>
+            <CardDescription>
+              A verification link has been sent to your email address. Please check your inbox (and spam folder) to complete your registration.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Link href="/login" className="w-full">
+              <Button className="w-full">
+                Back to Login
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -149,54 +126,31 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
-             <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isFormDisabled}>
-                {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 
-                  <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48" role="img" aria-hidden="true" focusable="false">
-                    <path fill="#4285F4" d="M48 24.4c0-1.6-.1-3.2-.4-4.8H24v9.1h13.5c-.6 2.9-2.3 5.4-4.9 7.1v5.9h7.6c4.5-4.1 7-10.2 7-17.3z"/>
-                    <path fill="#34A853" d="M24 48c6.5 0 12-2.1 16-5.7l-7.6-5.9c-2.2 1.5-5 2.3-8.4 2.3-6.5 0-12-4.4-14-10.3H2.4v6.1C6.7 43.2 14.7 48 24 48z"/>
-                    <path fill="#FBBC05" d="M10 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7V13H2.4C.9 16.1 0 19.9 0 24s.9 7.9 2.4 11l7.6-6.3z"/>
-                    <path fill="#EA4335" d="M24 9.8c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C36 2.2 30.5 0 24 0 14.7 0 6.7 4.8 2.4 13l7.6 6.3c2-5.9 7.5-10.3 14-10.3z"/>
-                  </svg>
-                }
-                Sign up with Google
-            </Button>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+          <form action={formAction} className="grid gap-4">
+             <div className="grid gap-2">
+                <Label htmlFor="full-name">Full Name</Label>
+                <Input id="full-name" name="full-name" placeholder="John Doe" required disabled={isPending} />
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                disabled={isPending}
+              />
             </div>
-            <form action={formAction} className="grid gap-4">
-               <div className="grid gap-2">
-                  <Label htmlFor="full-name">Full Name</Label>
-                  <Input id="full-name" name="full-name" placeholder="John Doe" required disabled={isFormDisabled} />
-                </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  disabled={isFormDisabled}
-                />
-              </div>
-              <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input id="password" name="password" type="password" required disabled={isFormDisabled} />
-              </div>
-              <Button type="submit" className="w-full" disabled={isFormDisabled}>
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isPending ? 'Creating account...' : 'Create an account'}
-              </Button>
-            </form>
-          </div>
+            <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" name="password" type="password" required disabled={isPending} />
+            </div>
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending ? 'Creating account...' : 'Create an account'}
+            </Button>
+          </form>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
             <Link href="/login" className="font-semibold text-primary hover:underline">
