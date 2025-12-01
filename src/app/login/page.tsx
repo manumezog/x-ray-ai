@@ -91,7 +91,7 @@ export default function LoginPage() {
 
       toast({ title: "Login successful!" });
       router.push('/dashboard');
-    } catch (e: any) {
+    } catch (e: any) => {
       console.error("Google Sign-In Error:", e);
       // Handle specific errors, like popup closed by user
       if (e.code !== 'auth/popup-closed-by-user') {
@@ -107,15 +107,6 @@ export default function LoginPage() {
   };
 
   const isFormDisabled = isPending || isGoogleLoading;
-
-  if (isGoogleLoading) { // Show full-screen loader during Google sign-in
-    return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg text-muted-foreground">Signing in...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -133,7 +124,12 @@ export default function LoginPage() {
           <div className="grid gap-4">
             <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isFormDisabled}>
               {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 
-                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="#4885ed" d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 256S109.8 0 244 0c73 0 135.7 28.7 181.8 74.2L359.3 144.2c-20.7-21.5-48.4-34.4-80.3-34.4-68.5 0-124.2 55.7-124.2 124.2s55.7 124.2 124.2 124.2c76.3 0 102.7-56.4 105.7-82.4H244v-66h233.8c1.3 12.8 2.2 26.1 2.2 39.4z"></path><path fill="#EA4335" d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 256S109.8 0 244 0c73 0 135.7 28.7 181.8 74.2L359.3 144.2c-20.7-21.5-48.4-34.4-80.3-34.4-68.5 0-124.2 55.7-124.2 124.2s55.7 124.2 124.2 124.2c76.3 0 102.7-56.4 105.7-82.4H244v-66h233.8c1.3 12.8 2.2 26.1 2.2 39.4z"></path><path fill="#FBBC05" d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 256S109.8 0 244 0c73 0 135.7 28.7 181.8 74.2L359.3 144.2c-20.7-21.5-48.4-34.4-80.3-34.4-68.5 0-124.2 55.7-124.2 124.2s55.7 124.2 124.2 124.2c76.3 0 102.7-56.4 105.7-82.4H244v-66h233.8c1.3 12.8 2.2 26.1 2.2 39.4z"></path><path fill="#34A853" d="M488 261.8C488 403.3 381.5 512 244 512 109.8 512 0 402.2 0 256S109.8 0 244 0c73 0 135.7 28.7 181.8 74.2L359.3 144.2c-20.7-21.5-48.4-34.4-80.3-34.4-68.5 0-124.2 55.7-124.2 124.2s55.7 124.2 124.2 124.2c76.3 0 102.7-56.4 105.7-82.4H244v-66h233.8c1.3 12.8 2.2 26.1 2.2 39.4z"></path></svg>
+                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                  <path fill="#4285F4" d="M488 261.8C488 403.3 381.5 512 244 512 110 512 0 402 0 256S110 0 244 0c73 0 136 28.7 182 74.2L364 144.2c-21-21.5-49-34.4-80-34.4-68.5 0-124 55.7-124 124.2s55.5 124.2 124 124.2c76.5 0 103-56.5 106-82.5H244v-66h234c2 12.8 4 26 4 39.4z" />
+                  <path fill="#34A853" d="M253 490c-32-15-58-39-78-69l-72 48c41 40 96 66 156 66 73 0 136-28.7 182-74.2l-64-51c-20 28-51 46-88 46z" />
+                  <path fill="#FBBC05" d="M106 290c-5-16-5-33 0-48l-72-48c-19 39-19 85 0 124l72-28z" />
+                  <path fill="#EA4335" d="M253 110c37 0 68 18 88 46l64-51C380 28.7 317 0 244 0 158 0 88 47 46 124l72 48c20-30 46-52 75-52z" />
+                </svg>
               }
               Login with Google
             </Button>
