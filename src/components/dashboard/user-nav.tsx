@@ -40,6 +40,7 @@ export function UserNav() {
   const t = translations[language];
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
     router.push('/login');
   };
@@ -47,7 +48,7 @@ export function UserNav() {
   const getInitials = (name: string | undefined | null) => {
     if (!name) return <UserIcon />;
     const nameParts = name.split(' ');
-    if (nameParts.length > 1) {
+    if (nameParts.length > 1 && nameParts[1]) {
       return `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase();
     }
     return name[0].toUpperCase();
@@ -62,7 +63,7 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-9 w-9 rounded-full">
           <Avatar className="h-9 w-9">
             <AvatarFallback>
-              {userData ? getInitials(userData.fullName) : <UserIcon />}
+              {user ? getInitials(user.displayName || userData?.fullName) : <UserIcon />}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -71,7 +72,7 @@ export function UserNav() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {userData?.fullName || t.user}
+              {user?.displayName || userData?.fullName || t.user}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
