@@ -12,11 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut, User as UserIcon, FileClock } from "lucide-react";
 import { LanguageContext, translations } from '@/context/language-context';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
+
+const DAILY_LIMIT = process.env.NEXT_PUBLIC_DAILY_REPORT_LIMIT || 10;
 
 export function UserNav() {
   const { user } = useUser();
@@ -29,7 +31,11 @@ export function UserNav() {
     return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
 
-  const { data: userData } = useDoc(userDocRef);
+  const { data: userData } = useDoc<{
+    fullName: string;
+    reportCount?: number;
+    lastReportDate?: string;
+  }>(userDocRef);
 
   const { language } = useContext(LanguageContext);
   const t = translations[language];
@@ -47,6 +53,9 @@ export function UserNav() {
     }
     return name[0].toUpperCase();
   };
+
+  const today = new Date().toISOString().split('T')[0];
+  const showReportCount = userData?.lastReportDate === today && userData?.reportCount !== undefined;
 
   return (
     <DropdownMenu>
@@ -76,6 +85,14 @@ export function UserNav() {
             <UserIcon className="mr-2 h-4 w-4" />
             <span>{t.profile}</span>
           </DropdownMenuItem>
+           {showReportCount && (
+            <DropdownMenuItem disabled>
+              <FileClock className="mr-2 h-4 w-4" />
+              <span>
+                {t.reportsToday}: {userData.reportCount} / {DAILY_LIMIT}
+              </span>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
