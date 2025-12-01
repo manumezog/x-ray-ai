@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useContext, useState } from 'react';
+import { useActionState, useEffect, useContext, useState, startTransition } from 'react';
 import { generateDiagnosticReport } from '@/ai/flows/generate-diagnostic-report';
 import { ImageUploader } from '@/components/dashboard/image-uploader';
 import { ReportDisplay } from '@/components/dashboard/report-display';
@@ -15,11 +15,13 @@ import { RefreshCcw } from 'lucide-react';
 type FormState = {
   report: string | null;
   error: string | null;
+  key: number;
 };
 
 const initialState: FormState = {
     report: null,
     error: null,
+    key: 0,
 };
 
 async function generateReportAction(prevState: FormState, formData: FormData): Promise<FormState> {
@@ -27,12 +29,13 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
   const language = formData.get('language') as string;
 
   if (!imageFile || imageFile.size === 0) {
-    return { report: null, error: 'Please upload an X-ray image file.' };
+    // This state should ideally not be user-visible on a clean reset
+    return { ...initialState, error: 'Please upload an X-ray image file.', key: prevState.key };
   }
   
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
   if (!allowedTypes.includes(imageFile.type)) {
-    return { report: null, error: 'Invalid file type. Please upload a JPG, PNG, or WEBP image.' };
+    return { ...initialState, error: 'Invalid file type. Please upload a JPG, PNG, or WEBP image.', key: prevState.key };
   }
 
   try {
@@ -41,10 +44,10 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
     const xrayImageDataUri = `data:${imageFile.type};base64,${base64}`;
 
     const result = await generateDiagnosticReport({ xrayImageDataUri, language });
-    return { report: result.report, error: null };
+    return { report: result.report, error: null, key: prevState.key + 1 };
   } catch (e: any) {
     console.error(e);
-    return { report: null, error: e.message || 'An unexpected error occurred while generating the report.' };
+    return { report: null, error: e.message || 'An unexpected error occurred while generating the report.', key: prevState.key };
   }
 }
 
@@ -56,6 +59,14 @@ export default function DashboardPage() {
   
   const [state, formAction, isPending] = useActionState(generateReportAction, initialState);
 
+  const resetAction = () => {
+    startTransition(() => {
+        // A special form action invocation that resets the state to initial.
+        // This is a conventional way to handle resets with useActionState
+        (formAction as any)(initialState);
+    });
+  };
+
   useEffect(() => {
     if (state.error) {
         toast({
@@ -64,17 +75,16 @@ export default function DashboardPage() {
             description: state.error,
         });
     }
-  }, [state.error, toast, t.errorTitle]);
+  }, [state.error, state.key, toast, t.errorTitle]);
 
   const handleReset = () => {
     setImagePreview(null);
-    // This is a way to reset the useActionState
-    (formAction as any)(new FormData());
+    resetAction();
   }
 
 
   return (
-    <div className="grid flex-1 gap-8 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-5">
+    <div className="grid flex-1 gap-8 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-5" key={state.key}>
       <div className="flex flex-col gap-6 lg:col-span-2">
         <Card>
             <CardHeader>
