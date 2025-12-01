@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState, useEffect, useContext, useState } from 'react';
+import { useActionState, useEffect, useContext, useState, useTransition } from 'react';
 import { generateDiagnosticReport } from '@/ai/flows/generate-diagnostic-report';
+import { validateXrayImage } from '@/ai/flows/validate-xray-image';
 import { ImageUploader } from '@/components/dashboard/image-uploader';
 import { ReportDisplay } from '@/components/dashboard/report-display';
 import { SubmitButton } from '@/components/dashboard/submit-button';
@@ -15,13 +16,11 @@ import { RefreshCcw } from 'lucide-react';
 type FormState = {
   report: string | null;
   error: string | null;
-  key: number;
 };
 
 const initialState: FormState = {
     report: null,
     error: null,
-    key: 0,
 };
 
 async function generateReportAction(prevState: FormState, formData: FormData): Promise<FormState> {
@@ -31,10 +30,15 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
   if (!imageFile || imageFile.size === 0) {
     return { ...prevState, report: null, error: 'Please upload an X-ray image file.' };
   }
-  
+
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
   if (!allowedTypes.includes(imageFile.type)) {
     return { ...prevState, report: null, error: 'Invalid file type. Please upload a JPG, PNG, or WEBP image.' };
+  }
+  
+  const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
+  if (imageFile.size > maxSizeInBytes) {
+      return { ...prevState, report: null, error: 'Image file is too large. Please upload an image under 10MB.' };
   }
 
   try {
@@ -42,11 +46,16 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
     const base64 = Buffer.from(buffer).toString('base64');
     const xrayImageDataUri = `data:${imageFile.type};base64,${base64}`;
 
+    const validationResult = await validateXrayImage({ xrayImageDataUri });
+    if (!validationResult.isXray) {
+        return { ...prevState, report: null, error: validationResult.reason || 'The uploaded image does not appear to be a medical X-ray.' };
+    }
+
     const result = await generateDiagnosticReport({ xrayImageDataUri, language });
-    return { report: result.report, error: null, key: prevState.key + 1 };
+    return { report: result.report, error: null };
   } catch (e: any) {
     console.error(e);
-    return { report: null, error: e.message || 'An unexpected error occurred while generating the report.', key: prevState.key };
+    return { report: null, error: e.message || 'An unexpected error occurred while generating the report.', };
   }
 }
 
@@ -57,6 +66,7 @@ export default function DashboardPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   const [state, formAction, isPending] = useActionState(generateReportAction, initialState);
+  const [_, startTransition] = useTransition();
 
   useEffect(() => {
     if (state.error) {
@@ -66,27 +76,24 @@ export default function DashboardPage() {
             description: state.error,
         });
     }
-  }, [state.error, state.key, toast, t.errorTitle]);
+  }, [state, toast, t.errorTitle]);
 
   const handleReset = () => {
-    setImagePreview(null);
-    // Directly reset the state to initial to avoid re-running the action with invalid data
-    // This was the source of the crash. However, useActionState doesn't expose a setter.
-    // The idiomatic way is to reset the key of the parent component to force a re-render and state reset.
-    // A more direct state reset would require moving away from useActionState to a manual implementation.
-    // The key-based reset is the simplest fix.
-    // We will reset the state by changing the key. The component is already keyed to state.key.
-    // When the state is updated with a new key, the component will remount with initial state.
-    // But since the action is tied to the form, we can't just set state. We can reset the form by changing its key.
-    // The easiest and correct fix here is to re-architect this slightly.
-    // The error is because `formAction` is being called with an object, not FormData.
-    // The previous attempt was flawed. A simple page reload on reset is a sledgehammer, but effective and simple.
-    // Let's go for a more elegant client-side reset.
-    // The hook `useActionState` doesn't provide a way to set state directly.
-    // So we manage the state ourselves.
-    window.location.reload();
-  }
-
+    startTransition(() => {
+        // This is a client-side state reset.
+        // We are not calling the server action.
+        (formAction as any)(initialState);
+        setImagePreview(null);
+        // Also reset the form's file input if necessary
+        const form = document.querySelector('form');
+        if (form) {
+            const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
+            if (fileInput) {
+                fileInput.value = '';
+            }
+        }
+    });
+  };
 
   return (
     <div className="grid flex-1 gap-8 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-5">
@@ -97,11 +104,11 @@ export default function DashboardPage() {
                 <CardDescription>{t.uploadXray}</CardDescription>
             </CardHeader>
             <CardContent>
-                <form action={formAction} className="space-y-4" key={state.key}>
+                <form action={formAction} className="space-y-4">
                     <input type="hidden" name="language" value={language} />
                     <ImageUploader imagePreview={imagePreview} setImagePreview={setImagePreview} disabled={isPending || !!state.report} />
                     {state.report ? (
-                      <Button onClick={handleReset} size="lg" className="w-full">
+                      <Button onClick={handleReset} size="lg" className="w-full" type="button">
                         <RefreshCcw className="mr-2" />
                         {t.startNewDiagnosis}
                       </Button>
