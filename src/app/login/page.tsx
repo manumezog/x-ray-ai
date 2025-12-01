@@ -51,21 +51,17 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
-  const [isSigningIn, setIsSigningIn] = useState(false); // Default to false
+  const [isCheckingRedirect, setIsCheckingRedirect] = useState(true);
 
   useEffect(() => {
-    // This effect handles the result of a redirect sign-in
-    // It runs when the component mounts after a redirect from Google
     if (!auth || !firestore) return;
 
-    setIsSigningIn(true); // Assume we might be handling a redirect
     getRedirectResult(auth)
       .then(async (result) => {
         if (result) {
-          // User successfully signed in.
+          // User successfully signed in via redirect.
           const user = result.user;
           const userDocRef = doc(firestore, "users", user.uid);
-          // Create or merge user data in Firestore
           const userData = {
             id: user.uid,
             email: user.email,
@@ -75,13 +71,13 @@ export default function LoginPage() {
           await setDoc(userDocRef, userData, { merge: true });
           toast({ title: 'Login successful!' });
           router.push('/dashboard');
+          // No need to set isCheckingRedirect to false here, as we are navigating away.
         } else {
-          // No redirect result, probably a normal page load
-          setIsSigningIn(false);
+          // No redirect result, this is a normal page load.
+          setIsCheckingRedirect(false);
         }
       })
       .catch((e: any) => {
-        setIsSigningIn(false); // Stop loading on error
         console.error("Google Sign-In Error:", e);
         let description = "An unexpected error occurred during sign-in.";
         if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
@@ -92,6 +88,7 @@ export default function LoginPage() {
           title: "Google Sign-In Failed",
           description: description,
         });
+        setIsCheckingRedirect(false); // Stop loading on error
       });
   }, [auth, firestore, router, toast]);
 
@@ -99,7 +96,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     const provider = new GoogleAuthProvider();
-    setIsSigningIn(true); // Set loading state before redirect
+    setIsCheckingRedirect(true); // Show loader before redirecting
     await signInWithRedirect(auth, provider);
   };
 
@@ -134,7 +131,7 @@ export default function LoginPage() {
     }
   }, initialState);
   
-  if (isSigningIn) {
+  if (isCheckingRedirect) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
