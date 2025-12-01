@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState, useEffect, useContext, useState, useTransition } from 'react';
+import { useActionState, useEffect, useContext, useState } from 'react';
 import { generateDiagnosticReport } from '@/ai/flows/generate-diagnostic-report';
+import { validateXrayImage } from '@/ai/flows/validate-xray-image';
 import { ImageUploader } from '@/components/dashboard/image-uploader';
 import { ReportDisplay } from '@/components/dashboard/report-display';
 import { SubmitButton } from '@/components/dashboard/submit-button';
@@ -22,12 +23,19 @@ const initialState: FormState = {
     error: null,
 };
 
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 async function generateReportAction(prevState: FormState, formData: FormData): Promise<FormState> {
   const imageFile = formData.get('xrayImage') as File;
   const language = formData.get('language') as string;
 
   if (!imageFile || imageFile.size === 0) {
-    return { ...prevState, report: null, error: 'Please upload an X-ray image file.' };
+    return { ...initialState, error: 'Please upload an X-ray image file.' };
+  }
+  
+  if (imageFile.size > MAX_FILE_SIZE_BYTES) {
+    return { ...initialState, error: `File size must be less than ${MAX_FILE_SIZE_MB} MB.` };
   }
 
   try {
@@ -35,6 +43,13 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
     const base64 = Buffer.from(buffer).toString('base64');
     const xrayImageDataUri = `data:${imageFile.type};base64,${base64}`;
 
+    // Validate if the image is an X-ray
+    const validationResult = await validateXrayImage({ xrayImageDataUri });
+    if (!validationResult.isXray) {
+        return { report: null, error: `Image validation failed: ${validationResult.reason}` };
+    }
+
+    // Generate the report
     const result = await generateDiagnosticReport({ xrayImageDataUri, language });
     return { report: result.report, error: null };
   } catch (e: any) {
@@ -49,7 +64,7 @@ export default function DashboardPage() {
   const t = translations[language];
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
-  const [state, formAction, isPending] = useActionState(generateReportAction, initialState);
+  const [state, formAction, isPending, setState] = useActionState(generateReportAction, initialState);
   
   useEffect(() => {
     if (state.error) {
@@ -62,13 +77,8 @@ export default function DashboardPage() {
   }, [state, toast, t.errorTitle]);
 
   const handleReset = () => {
-    // A bit of a hack to reset the form action state.
-    // We can't directly call a reset function on useActionState.
-    // So we re-trigger the action with a state that will cause it to return the initial state.
-    // A better solution would involve a more complex state management.
-    (formAction as any)(initialState)
+    setState(initialState);
     setImagePreview(null);
-    // Also reset the form's file input if necessary
     const form = document.querySelector('form');
     if (form) {
         const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
