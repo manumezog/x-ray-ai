@@ -96,7 +96,7 @@ export function ReportDisplay({ state, isPending, onReset, imagePreview }: Repor
                   <DownloadReport reportContent={state.report} imagePreview={imagePreview} asChild>
                      <Button variant="outline" size="lg">
                       <Download className="mr-2" />
-                      Download Report
+                      Download
                     </Button>
                   </DownloadReport>
                   <Button onClick={onReset} size="lg">
