@@ -31,7 +31,6 @@ export function ImageUploader({ imagePreview, setImagePreview, disabled = false,
     if (files && files[0]) {
       const file = files[0];
       if (file.type.startsWith('image/')) {
-        // If there was an error, reset the state when a new image is selected.
         if (onImageSelect) {
           onImageSelect();
         }
@@ -71,6 +70,10 @@ export function ImageUploader({ imagePreview, setImagePreview, disabled = false,
     setImagePreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+    // Also trigger the onImageSelect to clear any errors
+    if (onImageSelect) {
+      onImageSelect();
     }
   };
 
