@@ -27,7 +27,9 @@ export async function checkAndIncrementReportCount(userId: string, dailyLimit: n
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
     const lastReportDate = userData.lastReportDate;
-    const reportCount = userData.reportCount || 0;
+    
+    // Defensively get the report count. If it's not a number or doesn't exist, it's 0.
+    const reportCount = typeof userData.reportCount === 'number' ? userData.reportCount : 0;
 
     if (lastReportDate === today) {
       // Same day, check the count
@@ -37,7 +39,7 @@ export async function checkAndIncrementReportCount(userId: string, dailyLimit: n
       // Increment count
       await setDoc(userDocRef, { reportCount: reportCount + 1 }, { merge: true });
     } else {
-      // Different day, reset count
+      // Different day, reset count to 1 and update the date
       await setDoc(userDocRef, { reportCount: 1, lastReportDate: today }, { merge: true });
     }
 
