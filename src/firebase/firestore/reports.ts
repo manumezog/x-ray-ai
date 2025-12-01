@@ -1,3 +1,5 @@
+'use server';
+
 // This file is meant to be run on the server
 import { initializeFirebase } from '@/firebase';
 import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
