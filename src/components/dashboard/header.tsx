@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Globe } from 'lucide-react';
 import { LanguageContext } from '@/context/language-context';
+import { Flag } from './flag';
 
 export function Header() {
   const { language, setLanguage } = useContext(LanguageContext);
@@ -23,17 +24,23 @@ export function Header() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="flex items-center gap-2">
-              <Globe className="h-[1.2rem] w-[1.2rem]" />
               <span className="font-bold uppercase">{language}</span>
+              <Flag lang={language} />
               <span className="sr-only">Select language</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setLanguage('en')} disabled={language === 'en'}>
-              English
+              <div className="flex items-center gap-2">
+                <span>English</span>
+                <Flag lang="en" />
+              </div>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setLanguage('es')} disabled={language === 'es'}>
-              Español
+              <div className="flex items-center gap-2">
+                <span>Español</span>
+                <Flag lang="es" />
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
