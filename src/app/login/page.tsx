@@ -51,17 +51,21 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
-  const [isSigningIn, setIsSigningIn] = useState(true); // Used to show loader on page load
+  const [isSigningIn, setIsSigningIn] = useState(false); // Default to false
 
   useEffect(() => {
+    // This effect handles the result of a redirect sign-in
+    // It runs when the component mounts after a redirect from Google
     if (!auth || !firestore) return;
 
+    setIsSigningIn(true); // Assume we might be handling a redirect
     getRedirectResult(auth)
       .then(async (result) => {
-        setIsSigningIn(false);
         if (result) {
+          // User successfully signed in.
           const user = result.user;
           const userDocRef = doc(firestore, "users", user.uid);
+          // Create or merge user data in Firestore
           const userData = {
             id: user.uid,
             email: user.email,
@@ -71,23 +75,31 @@ export default function LoginPage() {
           await setDoc(userDocRef, userData, { merge: true });
           toast({ title: 'Login successful!' });
           router.push('/dashboard');
+        } else {
+          // No redirect result, probably a normal page load
+          setIsSigningIn(false);
         }
       })
       .catch((e: any) => {
-        setIsSigningIn(false);
-        console.error(e);
+        setIsSigningIn(false); // Stop loading on error
+        console.error("Google Sign-In Error:", e);
+        let description = "An unexpected error occurred during sign-in.";
+        if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+          description = "The sign-in window was closed. Please try again.";
+        }
         toast({
           variant: "destructive",
           title: "Google Sign-In Failed",
-          description: e.message || "An unexpected error occurred during redirect.",
+          description: description,
         });
       });
   }, [auth, firestore, router, toast]);
 
+
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     const provider = new GoogleAuthProvider();
-    setIsSigningIn(true);
+    setIsSigningIn(true); // Set loading state before redirect
     await signInWithRedirect(auth, provider);
   };
 
