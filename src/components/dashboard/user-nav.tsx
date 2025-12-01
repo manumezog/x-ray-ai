@@ -54,7 +54,7 @@ export function UserNav() {
   };
 
   const today = new Date().toISOString().split('T')[0];
-  const showReportCount = userData?.lastReportDate === today && userData?.reportCount !== undefined;
+  const reportsToday = userData?.lastReportDate === today ? userData.reportCount || 0 : 0;
 
   return (
     <DropdownMenu>
@@ -84,14 +84,12 @@ export function UserNav() {
             <UserIcon className="mr-2 h-4 w-4" />
             <span>{t.profile}</span>
           </DropdownMenuItem>
-           {showReportCount && (
-            <DropdownMenuItem disabled>
-              <FileClock className="mr-2 h-4 w-4" />
-              <span>
-                {t.reportsToday}: {userData.reportCount} / {dailyReportLimit}
-              </span>
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem disabled>
+            <FileClock className="mr-2 h-4 w-4" />
+            <span>
+              {t.reportsToday}: {reportsToday} / {dailyReportLimit}
+            </span>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
