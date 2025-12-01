@@ -22,11 +22,12 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
+  const isBrowser = typeof window !== 'undefined';
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
     firestore: getFirestore(firebaseApp),
-    remoteConfig: getRemoteConfig(firebaseApp),
+    remoteConfig: isBrowser ? getRemoteConfig(firebaseApp) : null,
   };
 }
 
@@ -52,4 +53,3 @@ export * from './firestore/use-doc';
 export * from './non-blocking-updates';
 export * from './errors';
 export * from './error-emitter';
-export * from './remote-config';

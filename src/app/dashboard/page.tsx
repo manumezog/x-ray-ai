@@ -11,8 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LanguageContext, translations } from '@/context/language-context';
 import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
-import { checkAndIncrementReportCount } from '@/firebase/firestore/reports';
-import { useUser, useRemoteConfig } from '@/firebase';
+import { useUser } from '@/firebase';
 
 
 type FormState = {
@@ -32,14 +31,9 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
   const imageFile = formData.get('xrayImage') as File;
   const language = formData.get('language') as string;
   const userId = formData.get('userId') as string;
-  const dailyReportLimit = parseInt(formData.get('dailyReportLimit') as string, 10);
 
   if (!userId) {
     return { ...initialState, error: 'User not authenticated.' };
-  }
-  
-  if (isNaN(dailyReportLimit) || dailyReportLimit <= 0) {
-    return { ...initialState, error: 'Daily report limit is not configured correctly.' };
   }
 
   if (!imageFile || imageFile.size === 0) {
@@ -51,12 +45,6 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
   }
 
   try {
-    // Check report limit first
-    const canGenerate = await checkAndIncrementReportCount(userId, dailyReportLimit);
-    if (!canGenerate) {
-      return { ...initialState, error: `You have reached your daily limit of ${dailyReportLimit} reports.` };
-    }
-
     const buffer = await imageFile.arrayBuffer();
     const base64 = Buffer.from(buffer).toString('base64');
     const xrayImageDataUri = `data:${imageFile.type};base64,${base64}`;
@@ -64,8 +52,6 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
     // Validate if the image is an X-ray
     const validationResult = await validateXrayImage({ xrayImageDataUri });
     if (!validationResult.isXray) {
-        // Note: We don't decrement the count if validation fails.
-        // The limit is on generation *attempts*.
         return { report: null, error: `Image validation failed: ${validationResult.reason}` };
     }
 
@@ -82,7 +68,6 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const { language } = useContext(LanguageContext);
-  const { daily_report_limit: dailyReportLimit, isLoading: isConfigLoading } = useRemoteConfig();
   const t = translations[language];
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [displayError, setDisplayError] = useState<string | null>(null);
@@ -129,7 +114,7 @@ export default function DashboardPage() {
 
   const showReport = state.report && !isPending;
   const showError = displayError && !isPending && !showReport;
-  const isSubmitDisabled = !imagePreview || !user || isConfigLoading || isPending;
+  const isSubmitDisabled = !imagePreview || !user || isPending;
 
   return (
     <div className="grid flex-1 gap-8 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-5">
@@ -143,7 +128,6 @@ export default function DashboardPage() {
                 <form action={formAction} className="space-y-4">
                     <input type="hidden" name="language" value={language} />
                     <input type="hidden" name="userId" value={user?.uid} />
-                    <input type="hidden" name="dailyReportLimit" value={dailyReportLimit} />
                     <ImageUploader 
                       imagePreview={imagePreview} 
                       setImagePreview={setImagePreview} 

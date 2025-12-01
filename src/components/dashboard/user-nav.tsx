@@ -12,9 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User as UserIcon, FileClock } from "lucide-react";
+import { LogOut, User as UserIcon } from "lucide-react";
 import { LanguageContext, translations } from '@/context/language-context';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth, useRemoteConfig } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 
@@ -23,7 +23,6 @@ export function UserNav() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
-  const { daily_report_limit: dailyReportLimit } = useRemoteConfig();
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -32,8 +31,6 @@ export function UserNav() {
 
   const { data: userData } = useDoc<{
     fullName: string;
-    reportCount?: number;
-    lastReportDate?: string;
   }>(userDocRef);
 
   const { language } = useContext(LanguageContext);
@@ -53,9 +50,6 @@ export function UserNav() {
     }
     return name[0].toUpperCase();
   };
-
-  const today = new Date().toISOString().split('T')[0];
-  const reportsToday = userData?.lastReportDate === today ? userData.reportCount || 0 : 0;
 
   return (
     <DropdownMenu>
@@ -84,12 +78,6 @@ export function UserNav() {
           <DropdownMenuItem>
             <UserIcon className="mr-2 h-4 w-4" />
             <span>{t.profile}</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem disabled>
-            <FileClock className="mr-2 h-4 w-4" />
-            <span>
-              {t.reportsToday}: {reportsToday} / {dailyReportLimit}
-            </span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

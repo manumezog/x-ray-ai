@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { useActionState, useState } from 'react';
+import { useActionState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -62,8 +62,6 @@ export default function SignupPage() {
         email: user.email,
         fullName: fullName,
         registrationDate: new Date().toISOString(),
-        reportCount: 0,
-        lastReportDate: '',
       };
       await setDoc(userDocRef, userData);
 

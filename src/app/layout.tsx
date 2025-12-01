@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { LanguageProvider } from '@/context/language-context';
-import { FirebaseClientProvider, RemoteConfigProvider } from '@/firebase';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'XRay Insights',
@@ -23,11 +23,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <RemoteConfigProvider>
-            <LanguageProvider>
-              {children}
-            </LanguageProvider>
-          </RemoteConfigProvider>
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>
