@@ -37,6 +37,10 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
   if (!userId) {
     return { ...initialState, error: 'User not authenticated.' };
   }
+  
+  if (isNaN(dailyReportLimit)) {
+    return { ...initialState, error: 'Daily report limit is not configured correctly.' };
+  }
 
   if (!imageFile || imageFile.size === 0) {
     return { ...initialState, error: 'Please upload an X-ray image file.' };
@@ -100,12 +104,21 @@ export default function DashboardPage() {
   }, [state, isPending, toast, t.errorTitle]);
 
   const handleReset = () => {
+    // This is a client-side only reset. We are not re-submitting the form.
+    // We need to manually reset the form fields and our React state.
     const form = document.querySelector('form');
     if (form) {
         form.reset();
     }
     setImagePreview(null);
-    setDisplayError(null);
+    setDisplayError(null); // Clear the displayed error
+    
+    // We can't directly reset the useActionState, but by clearing the things
+    // that depend on it (like displayError and the report itself), we effectively
+    // reset the view. A "new" initial state will be created on the next form submission.
+    // To clear the report, we can just reset our component's view state.
+    state.report = null;
+    state.error = null;
   };
 
   const onImageSelect = () => {
