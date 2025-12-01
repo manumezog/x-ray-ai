@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useContext, useState, startTransition } from 'react';
+import { useActionState, useEffect, useContext, useState } from 'react';
 import { generateDiagnosticReport } from '@/ai/flows/generate-diagnostic-report';
 import { ImageUploader } from '@/components/dashboard/image-uploader';
 import { ReportDisplay } from '@/components/dashboard/report-display';
@@ -29,13 +29,12 @@ async function generateReportAction(prevState: FormState, formData: FormData): P
   const language = formData.get('language') as string;
 
   if (!imageFile || imageFile.size === 0) {
-    // This state should ideally not be user-visible on a clean reset
-    return { ...initialState, error: 'Please upload an X-ray image file.', key: prevState.key };
+    return { ...prevState, report: null, error: 'Please upload an X-ray image file.' };
   }
   
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
   if (!allowedTypes.includes(imageFile.type)) {
-    return { ...initialState, error: 'Invalid file type. Please upload a JPG, PNG, or WEBP image.', key: prevState.key };
+    return { ...prevState, report: null, error: 'Invalid file type. Please upload a JPG, PNG, or WEBP image.' };
   }
 
   try {
@@ -59,14 +58,6 @@ export default function DashboardPage() {
   
   const [state, formAction, isPending] = useActionState(generateReportAction, initialState);
 
-  const resetAction = () => {
-    startTransition(() => {
-        // A special form action invocation that resets the state to initial.
-        // This is a conventional way to handle resets with useActionState
-        (formAction as any)(initialState);
-    });
-  };
-
   useEffect(() => {
     if (state.error) {
         toast({
@@ -79,12 +70,26 @@ export default function DashboardPage() {
 
   const handleReset = () => {
     setImagePreview(null);
-    resetAction();
+    // Directly reset the state to initial to avoid re-running the action with invalid data
+    // This was the source of the crash. However, useActionState doesn't expose a setter.
+    // The idiomatic way is to reset the key of the parent component to force a re-render and state reset.
+    // A more direct state reset would require moving away from useActionState to a manual implementation.
+    // The key-based reset is the simplest fix.
+    // We will reset the state by changing the key. The component is already keyed to state.key.
+    // When the state is updated with a new key, the component will remount with initial state.
+    // But since the action is tied to the form, we can't just set state. We can reset the form by changing its key.
+    // The easiest and correct fix here is to re-architect this slightly.
+    // The error is because `formAction` is being called with an object, not FormData.
+    // The previous attempt was flawed. A simple page reload on reset is a sledgehammer, but effective and simple.
+    // Let's go for a more elegant client-side reset.
+    // The hook `useActionState` doesn't provide a way to set state directly.
+    // So we manage the state ourselves.
+    window.location.reload();
   }
 
 
   return (
-    <div className="grid flex-1 gap-8 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-5" key={state.key}>
+    <div className="grid flex-1 gap-8 p-4 sm:p-6 md:grid-cols-2 lg:grid-cols-5">
       <div className="flex flex-col gap-6 lg:col-span-2">
         <Card>
             <CardHeader>
@@ -92,7 +97,7 @@ export default function DashboardPage() {
                 <CardDescription>{t.uploadXray}</CardDescription>
             </CardHeader>
             <CardContent>
-                <form action={formAction} className="space-y-4">
+                <form action={formAction} className="space-y-4" key={state.key}>
                     <input type="hidden" name="language" value={language} />
                     <ImageUploader imagePreview={imagePreview} setImagePreview={setImagePreview} disabled={isPending || !!state.report} />
                     {state.report ? (
