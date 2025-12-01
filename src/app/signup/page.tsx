@@ -73,7 +73,16 @@ export default function SignupPage() {
 
       toast({ title: 'Account created successfully!', description: 'You are now logged in.' });
       router.push('/dashboard');
-    } catch (e: any)      {
+    } catch (e: any) {
+        if (e.code === 'auth/popup-closed-by-user') {
+          // This is a common case, not necessarily an error.
+          toast({
+            variant: "default",
+            title: "Sign-up cancelled",
+            description: "The Google Sign-Up window was closed before completion.",
+          });
+          return; // Stop further execution
+        }
       console.error("Google Sign-In Error:", e);
       toast({
         variant: "destructive",

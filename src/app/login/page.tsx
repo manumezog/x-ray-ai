@@ -74,6 +74,17 @@ export default function LoginPage() {
       toast({ title: 'Login successful!' });
       router.push('/dashboard');
     } catch (e: any) {
+      if (e.code === 'auth/popup-closed-by-user') {
+        // This is a common case, not necessarily an error.
+        // You might want to show a more subtle notification or just log it.
+        toast({
+          variant: "default",
+          title: "Sign-in cancelled",
+          description: "The Google Sign-In window was closed before completion.",
+        });
+        return; // Stop further execution
+      }
+      
       console.error(e);
       toast({
         variant: "destructive",
