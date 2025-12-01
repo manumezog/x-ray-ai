@@ -67,8 +67,6 @@ export default function DashboardPage() {
   const [state, formAction, isPending] = useActionState(generateReportAction, initialState);
   
   useEffect(() => {
-    // Only show a toast if there's an error and the form is not pending.
-    // This prevents showing an error toast during the initial "reset" state.
     if (state.error && !isPending) {
         toast({
             variant: "destructive",
@@ -79,10 +77,12 @@ export default function DashboardPage() {
   }, [state, isPending, toast, t.errorTitle]);
 
   const handleReset = () => {
-    // A dummy form action call with no FormData.
     // This is the idiomatic way to reset `useActionState` to its initial state.
-    formAction(initialState as any);
+    // It re-runs the action with a null formData, which should reset the state.
+    // We pass the initial state explicitly to be safe.
+    formAction(initialState as any); 
     setImagePreview(null);
+    // Reset the file input visually
     const form = document.querySelector('form');
     if (form) {
         const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
